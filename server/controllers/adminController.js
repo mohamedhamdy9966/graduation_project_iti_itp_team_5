@@ -6,8 +6,9 @@ import jwt from "jsonwebtoken";
 import appointmentDoctorModel from "../models/appointmentDoctorModel.js";
 import userModel from "../models/userModel.js";
 import labModel from "../models/labModel.js";
+import appointmentLabModel from "../models/appointmentLabModel.js";
 
-// API for adding doctor
+// API for adding lab
 const addLab = async (req, res) => {
   try {
     const {
@@ -52,7 +53,7 @@ const addLab = async (req, res) => {
       });
     }
 
-    // Check if doctor already exists
+    // Check if lab already exists
     const existingLab = await labModel.findOne({ email });
     if (existingLab) {
       return res.json({
@@ -71,7 +72,7 @@ const addLab = async (req, res) => {
     });
     const imageUrl = imageUpload.secure_url;
 
-    const doctorData = {
+    const labData = {
       name,
       email: email.toLowerCase(),
       mobile,
@@ -218,7 +219,7 @@ const allDoctors = async (req, res) => {
   }
 };
 
-// api to get all doctors
+// api to get all labs
 const allLabs = async (req, res) => {
   try {
     const labs = await labModel.find({}).select("-password");
@@ -231,7 +232,15 @@ const allLabs = async (req, res) => {
 // API to get all appointments list
 const appointmentsAdmin = async (req, res) => {
   try {
-    const appointments = await appointmentDoctorModel.find({});
+    const doctorAppointments = await appointmentDoctorModel.find({}).lean();
+    const labAppointments = await appointmentLabModel.find({}).lean();
+
+    // Add type field to distinguish appointment types
+    const appointments = [
+      ...doctorAppointments.map((appt) => ({ ...appt, type: "doctor" })),
+      ...labAppointments.map((appt) => ({ ...appt, type: "lab" })),
+    ];
+
     res.json({ success: true, appointments });
   } catch (error) {
     res.json({ success: false, message: error.message });
@@ -241,29 +250,69 @@ const appointmentsAdmin = async (req, res) => {
 // API for appointment cancellation
 const appointmentCancel = async (req, res) => {
   try {
-    const { appointmentId } = req.body;
-    const appointmentData = await appointmentDoctorModel.findById(
-      appointmentId
-    );
-    // verify appointment user
+    const { appointmentId, type } = req.body;
 
-    await appointmentDoctorModel.findByIdAndUpdate(appointmentId, {
-      cancelled: true,
-    });
+    if (!appointmentId || !type) {
+      return res.json({
+        success: false,
+        message: "Missing appointment ID or type",
+      });
+    }
 
-    // releasing doctor
-    const { docId, labId, slotDate, slotTime } = appointmentData;
+    if (type === "doctor") {
+      const appointmentData = await appointmentDoctorModel.findById(
+        appointmentId
+      );
+      if (!appointmentData) {
+        return res.json({
+          success: false,
+          message: "Doctor appointment not found",
+        });
+      }
 
-    const doctorData = await doctorModel.findById(docId);
-    const labData = await labModelModel.findById(labId);
+      await appointmentDoctorModel.findByIdAndUpdate(appointmentId, {
+        cancelled: true,
+      });
 
-    let slotsBooked = doctorData.slotsBooked;
-    let slotsBooked1 = doctorData.slotsBooked;
+      const { docId, slotDate, slotTime } = appointmentData;
+      if (docId) {
+        const doctorData = await doctorModel.findById(docId);
+        if (doctorData) {
+          let slotsBooked = doctorData.slotsBooked;
+          slotsBooked[slotDate] = slotsBooked[slotDate].filter(
+            (e) => e !== slotTime
+          );
+          await doctorModel.findByIdAndUpdate(docId, { slotsBooked });
+        }
+      }
+    } else if (type === "lab") {
+      const appointmentData = await appointmentLabModel.findById(appointmentId);
+      if (!appointmentData) {
+        return res.json({
+          success: false,
+          message: "Lab appointment not found",
+        });
+      }
 
-    slotsBooked[slotDate] = slotsBooked[slotDate].filter((e) => e !== slotTime);
-    slotsBooked1[slotDate] = slotsBooked1[slotDate].filter((e) => e !== slotTime);
-    await doctorModel.findByIdAndUpdate(docId, { slotsBooked });
-    await labModel.findByIdAndUpdate(labId, { slotsBooked1 });
+      await appointmentLabModel.findByIdAndUpdate(appointmentId, {
+        cancelled: true,
+      });
+
+      const { labId, slotDate, slotTime } = appointmentData;
+      if (labId) {
+        const labData = await labModel.findById(labId);
+        if (labData) {
+          let slotsBooked = labData.slotsBooked;
+          slotsBooked[slotDate] = slotsBooked[slotDate].filter(
+            (e) => e !== slotTime
+          );
+          await labModel.findByIdAndUpdate(labId, { slotsBooked });
+        }
+      }
+    } else {
+      return res.json({ success: false, message: "Invalid appointment type" });
+    }
+
     res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {
     res.json({ success: false, message: error.message });
@@ -274,14 +323,25 @@ const appointmentCancel = async (req, res) => {
 const adminDashboard = async (req, res) => {
   try {
     const doctors = await doctorModel.find({});
+    const labs = await labModel.find({});
     const users = await userModel.find({});
-    const appointments = await appointmentDoctorModel.find({});
+    const doctorAppointments = await appointmentDoctorModel.find({});
+    const labAppointments = await appointmentLabModel.find({});
 
     const dashData = {
       doctors: doctors.length,
-      appointments: appointments.length,
+      labs: labs.length,
+      appointments: doctorAppointments.length + labAppointments.length,
       patients: users.length,
-      latestAppointments: appointments.reverse().slice(0, 5),
+      latestAppointments: [
+        ...doctorAppointments.map((appt) => ({
+          ...appt.toObject(),
+          type: "doctor",
+        })),
+        ...labAppointments.map((appt) => ({ ...appt.toObject(), type: "lab" })),
+      ]
+        .sort((a, b) => b.date - a.date)
+        .slice(0, 5),
     };
     res.json({ success: true, dashData });
   } catch (error) {

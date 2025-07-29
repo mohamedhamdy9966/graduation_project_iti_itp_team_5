@@ -7,12 +7,24 @@ import {
   bookAppointment,
   listAppointment,
   cancelAppointment,
+  placeOrderStripe,
+  placeOrderPaymob,
+  payAppointmentStripe,
+  payAppointmentPaymob,
+  uploadAudio,
+  uploadFile,
+  analyzeImage,
+  analyzePdfText,
+  getDoctorsBySpecialty,
 } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
-import upload from "../middlewares/multer.js"; // Import the multer instance
+import upload from "../middlewares/multer.js";
+import doctorModel from "../models/doctorModel.js";
+import labModel from "../models/labModel.js";
 
 const userRouter = express.Router();
 
+// Existing routes
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
 userRouter.get("/get-profile", authUser, getProfile);
@@ -25,5 +37,40 @@ userRouter.post(
 userRouter.post("/book-appointment", authUser, bookAppointment);
 userRouter.get("/appointments", authUser, listAppointment);
 userRouter.post("/cancel-appointment", authUser, cancelAppointment);
+userRouter.post("/pay-appointment-stripe", authUser, payAppointmentStripe);
+userRouter.post("/pay-appointment-paymob", authUser, payAppointmentPaymob);
+userRouter.post("/stripe", authUser, placeOrderStripe);
+userRouter.post("/paymob", authUser, placeOrderPaymob);
+userRouter.get("/chatbot-context", async (req, res) => {
+  try {
+    const doctors = await doctorModel
+      .find({ available: true })
+      .select("name specialty fees");
+    const labs = await labModel
+      .find({ available: true })
+      .select("name services");
+    res.json({
+      success: true,
+      context: {
+        doctors: doctors.map((doc) => ({
+          name: doc.name,
+          specialty: doc.specialty,
+          fees: doc.fees,
+        })),
+        labs: labs.map((lab) => ({
+          name: lab.name,
+          services: lab.services,
+        })),
+      },
+    });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+});
+userRouter.post("/upload-audio-public", upload.single("audio"), uploadAudio);
+userRouter.post("/upload-file-public", upload.single("file"), uploadFile);
+userRouter.post("/analyze-image", authUser, analyzeImage);
+userRouter.post("/analyze-pdf", upload.single("file"), analyzePdfText);
+userRouter.get("/doctors-by-specialty", getDoctorsBySpecialty);
 
 export default userRouter;

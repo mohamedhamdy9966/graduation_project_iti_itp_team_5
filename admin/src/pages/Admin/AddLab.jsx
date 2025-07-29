@@ -16,7 +16,7 @@ const AddLab = () => {
   const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
 
-  const { backendUrl, lToken } = useContext(AdminContext);
+  const { backendUrl, aToken } = useContext(AdminContext);
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
@@ -41,7 +41,7 @@ const AddLab = () => {
       const { data } = await axios.post(
         backendUrl + "/api/admin/add-lab",
         formData,
-        { headers: { lToken } }
+        { headers: { aToken } }
       );
       if (data.success) {
         toast.success(data.message);
@@ -136,9 +136,10 @@ const AddLab = () => {
                 Mobile Number
               </label>
               <input
+                type="tel"
+                pattern="[0-9]{11}"
                 onChange={(e) => setMobile(e.target.value)}
                 value={mobile}
-                type="text"
                 placeholder="Phone Number"
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 required
@@ -176,7 +177,6 @@ const AddLab = () => {
 
           {/* Right Column */}
           <div className="space-y-4">
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Fees

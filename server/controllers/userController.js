@@ -5,6 +5,31 @@ import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
 import appointmentDoctorModel from "../models/appointmentDoctorModel.js";
 import doctorModel from "../models/doctorModel.js";
+import appointmentLabModel from "../models/appointmentLabModel.js";
+import axios from "axios";
+import stripe from "stripe";
+import PDFParser from "pdf2json";
+import tempFileModel from "../models/tempFileModel.js";
+import ffmpeg from "fluent-ffmpeg";
+import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+import { Readable } from "stream";
+
+// Set FFmpeg path
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+
+// Function to get audio duration
+const getAudioDuration = async (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = Readable.from(buffer);
+    ffmpeg(stream).ffprobe((err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data.format.duration);
+      }
+    });
+  });
+};
 
 // API to register user
 const registerUser = async (req, res) => {
@@ -17,6 +42,7 @@ const registerUser = async (req, res) => {
       bloodType,
       medicalInsurance,
       gender,
+      birthDate,
       allergy,
     } = req.body;
     if (
@@ -26,7 +52,8 @@ const registerUser = async (req, res) => {
       !mobile ||
       !bloodType ||
       !medicalInsurance ||
-      !gender
+      !gender ||
+      !birthDate
     ) {
       return res.json({ success: false, message: "Missing Details" });
     }
@@ -51,6 +78,11 @@ const registerUser = async (req, res) => {
       return res.json({ success: false, message: "Invalid Gender" });
     }
 
+    // Validating birth date
+    if (!validator.isDate(birthDate)) {
+      return res.json({ success: false, message: "Enter Valid Birth Date" });
+    }
+
     // Hashing user password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -63,7 +95,9 @@ const registerUser = async (req, res) => {
       bloodType,
       medicalInsurance,
       gender,
-      allergy: allergy || {}, // Ensure allergy is an object
+      birthDate,
+      allergy: allergy || {},
+      address: { line1: "", line2: "" },
     };
 
     const newUser = new userModel(userData);
@@ -74,6 +108,285 @@ const registerUser = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
+  }
+};
+
+// API to upload and transcribe audio
+const uploadAudio = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No audio file uploaded." });
+    }
+
+    // Validate audio duration
+    const duration = await getAudioDuration(req.file.buffer);
+    if (duration > 60) {
+      return res.status(400).json({
+        success: false,
+        message: "Audio duration exceeds 60 seconds.",
+      });
+    }
+
+    // Upload audio to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          { resource_type: "video", folder: "roshetta/audio" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(req.file.buffer);
+    });
+
+    // Transcribe audio using Open AI Whisper API
+    const formData = new FormData();
+    formData.append("file", req.file.buffer, {
+      filename: req.file.originalname,
+    });
+    formData.append("model", "whisper-1");
+
+    const transcriptionResponse = await axios.post(
+      "https://api.openai.com/v1/audio/transcriptions",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    const transcription = transcriptionResponse.data.text;
+
+    // Store metadata in MongoDB (for authenticated users only)
+    if (req.userId) {
+      await userModel.findByIdAndUpdate(req.userId, {
+        $push: {
+          uploadedFiles: {
+            type: "audio",
+            url: result.secure_url,
+            transcription,
+            createdAt: Date.now(),
+          },
+        },
+      });
+    } else {
+      const tempFile = new tempFileModel({
+        type: "audio",
+        url: result.secure_url,
+        transcription,
+        createdAt: Date.now(),
+        sessionId: req.sessionID || "anonymous",
+      });
+      await tempFile.save();
+    }
+
+    res
+      .status(200)
+      .json({ success: true, transcription, fileUrl: result.secure_url });
+  } catch (error) {
+    console.error("Error uploading audio:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// API to upload file
+const uploadFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No file uploaded." });
+    }
+
+    // Upload file to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          { resource_type: "auto", folder: "roshetta/files" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(req.file.buffer);
+    });
+
+    // Store metadata in MongoDB (for authenticated users only)
+    if (req.userId) {
+      await userModel.findByIdAndUpdate(req.userId, {
+        $push: {
+          uploadedFiles: {
+            type: req.file.mimetype,
+            url: result.secure_url,
+            createdAt: Date.now(),
+          },
+        },
+      });
+    } else {
+      const tempFile = new tempFileModel({
+        type: req.file.mimetype,
+        url: result.secure_url,
+        createdAt: Date.now(),
+        sessionId: req.sessionID || "anonymous",
+      });
+      await tempFile.save();
+    }
+
+    res.status(200).json({ success: true, fileUrl: result.secure_url });
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// API to analyze image
+const analyzeImage = async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    if (!imageUrl) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Image URL is required" });
+    }
+
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Analyze medical prescriptions from images. Extract details such as medication names, dosages, and instructions. If the image is unclear or not a prescription, state so.",
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Analyze this prescription image." },
+              { type: "image_url", image_url: { url: imageUrl } },
+            ],
+          },
+        ],
+        max_tokens: 300,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      }
+    );
+
+    res.json({
+      success: true,
+      analysis: response.data.choices[0].message.content,
+    });
+  } catch (error) {
+    console.error("Error analyzing image:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// API to analyze PDF text
+const analyzePdfText = async (req, res) => {
+  try {
+    if (!req.file || req.file.mimetype !== "application/pdf") {
+      return res
+        .status(400)
+        .json({ success: false, message: "No PDF file uploaded." });
+    }
+
+    // Upload PDF to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          { resource_type: "auto", folder: "roshetta/files" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(req.file.buffer);
+    });
+
+    // Extract text from PDF using pdf2json
+    const pdfParser = new PDFParser();
+    let text = "";
+    pdfParser.on("pdfParser_dataReady", (pdfData) => {
+      text = pdfParser.getRawTextContent();
+    });
+    pdfParser.on("pdfParser_dataError", (errData) => {
+      throw new Error(errData.parserError);
+    });
+    await new Promise((resolve, reject) => {
+      pdfParser.parseBuffer(req.file.buffer);
+      pdfParser.on("end", resolve);
+      pdfParser.on("error", reject);
+    });
+
+    // Analyze text using Open AI
+    const textAnalysisResponse = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Analyze medical prescriptions from text. Extract details such as medication names, dosages, and instructions. If the text is unclear or not a prescription, state so.",
+          },
+          {
+            role: "user",
+            content: `Analyze this prescription text: ${text}`,
+          },
+        ],
+        max_tokens: 100,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      }
+    );
+
+    // Store metadata
+    if (req.userId) {
+      await userModel.findByIdAndUpdate(req.userId, {
+        $push: {
+          uploadedFiles: {
+            type: "application/pdf",
+            url: result.secure_url,
+            textContent: text,
+            createdAt: Date.now(),
+          },
+        },
+      });
+    } else {
+      const tempFile = new tempFileModel({
+        type: "application/pdf",
+        url: result.secure_url,
+        textContent: text,
+        sessionId: req.sessionID || "anonymous",
+        createdAt: Date.now(),
+      });
+      await tempFile.save();
+    }
+
+    res.json({
+      success: true,
+      text,
+      fileUrl: result.secure_url,
+      analysis: textAnalysisResponse.data.choices[0].message.content,
+    });
+  } catch (error) {
+    console.error("Error analyzing PDF text:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -118,26 +431,25 @@ const updateProfile = async (req, res) => {
       name,
       phone,
       address,
-      dob,
+      birthDate,
       gender,
       medicalInsurance,
       allergy,
     } = req.body;
     const imageProfile = req.file;
-    if (!name || !phone || !dob || !gender || !medicalInsurance) {
+    if (!name || !phone || !birthDate || !gender || !medicalInsurance) {
       return res.json({ success: false, message: "Data Missing" });
     }
     await userModel.findByIdAndUpdate(userId, {
       name,
       phone,
       address: JSON.parse(address),
-      dob,
+      birthDate,
       gender,
       medicalInsurance,
-      allergy: JSON.parse(allergy) || {}, // Parse allergy or default to empty object
+      allergy: JSON.parse(allergy) || {},
     });
     if (imageProfile) {
-      // Upload image to Cloudinary
       const imageUpload = await cloudinary.uploader.upload(imageProfile.path, {
         resource_type: "image",
       });
@@ -154,13 +466,12 @@ const updateProfile = async (req, res) => {
 const bookAppointment = async (req, res) => {
   try {
     const { docId, slotDate, slotTime } = req.body;
-    const userId = req.userId; // Use userId from authUser middleware
+    const userId = req.userId;
     const docData = await doctorModel.findById(docId).select("-password");
     if (!docData.available) {
       return res.json({ success: false, message: "Doctor Not Available" });
     }
     let slotsBooked = docData.slotsBooked;
-    // Checking for slot availability
     if (slotsBooked[slotDate]) {
       if (slotsBooked[slotDate].includes(slotTime)) {
         return res.json({ success: false, message: "Slot Not Available" });
@@ -188,7 +499,6 @@ const bookAppointment = async (req, res) => {
     };
     const newAppointment = new appointmentDoctorModel(appointmentData);
     await newAppointment.save();
-    // Save new slots data in docData
     await doctorModel.findByIdAndUpdate(docId, { slotsBooked });
     res.json({ success: true, message: "Appointment Booked" });
   } catch (error) {
@@ -196,13 +506,27 @@ const bookAppointment = async (req, res) => {
   }
 };
 
-// API to get user appointments for frontend my appointments page
+// API to get user appointments
 const listAppointment = async (req, res) => {
   try {
-    const userId = req.userId; // Use userId from authUser middleware
-    const appointments = await appointmentDoctorModel.find({
+    const userId = req.userId;
+    const doctorAppointments = await appointmentDoctorModel.find({
       userId: userId.toString(),
     });
+    const labAppointments = await appointmentLabModel.find({
+      userId: userId.toString(),
+    });
+    const appointments = [...doctorAppointments, ...labAppointments].map(
+      (appt) => ({
+        ...appt._doc,
+        status: appt.cancelled
+          ? "Cancelled"
+          : appt.isCompleted
+          ? "Completed"
+          : "Scheduled",
+        paymentStatus: appt.payment ? "Paid" : "Not Paid",
+      })
+    );
     res.json({ success: true, appointments });
   } catch (error) {
     res.json({ success: false, message: error.message });
@@ -210,30 +534,464 @@ const listAppointment = async (req, res) => {
 };
 
 // API to cancel appointment
-// API to cancel appointment
 const cancelAppointment = async (req, res) => {
   try {
     const { appointmentId } = req.body;
-    const userId = req.userId; // Use userId from authUser middleware
-    const appointmentData = await appointmentDoctorModel.findById(appointmentId);
+    const userId = req.userId;
+    let appointmentData = await appointmentDoctorModel.findById(appointmentId);
+    let isDoctorAppointment = true;
+
     if (!appointmentData) {
-      return res.json({ success: false, message: "Appointment Not Found" });
+      appointmentData = await appointmentLabModel.findById(appointmentId);
+      isDoctorAppointment = false;
+      if (!appointmentData) {
+        return res.json({ success: false, message: "Appointment Not Found" });
+      }
     }
-    // Verify appointment user
+
     if (appointmentData.userId !== userId.toString()) {
       return res.json({ success: false, message: "Unauthorized Action" });
     }
-    await appointmentDoctorModel.findByIdAndUpdate(appointmentId, {
+
+    await (isDoctorAppointment
+      ? appointmentDoctorModel
+      : appointmentLabModel
+    ).findByIdAndUpdate(appointmentId, {
       cancelled: true,
     });
 
-    // Releasing doctor slot
-    const { docId, slotDate, slotTime } = appointmentData;
-    const doctorData = await doctorModel.findById(docId);
-    let slotsBooked = doctorData.slotsBooked;
+    const { docId, labId, slotDate, slotTime } = appointmentData;
+    const targetId = isDoctorAppointment ? docId : labId;
+    const model = isDoctorAppointment ? doctorModel : labModel;
+    const targetData = await model.findById(targetId);
+    let slotsBooked = targetData.slotsBooked;
     slotsBooked[slotDate] = slotsBooked[slotDate].filter((e) => e !== slotTime);
-    await doctorModel.findByIdAndUpdate(docId, { slotsBooked });
+    await model.findByIdAndUpdate(targetId, { slotsBooked });
     res.json({ success: true, message: "Appointment Cancelled" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Helper function to get Paymob auth token
+const getAuthToken = async () => {
+  try {
+    const rawKey = process.env.PAYMOB_API_KEY;
+    if (!rawKey) {
+      throw new Error("PAYMOB_API_KEY is not defined in environment variables");
+    }
+    const cleanedKey = rawKey.trim();
+
+    const response = await axios.post(
+      "https://accept.paymobsolutions.com/api/auth/tokens",
+      { api_key: cleanedKey },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
+    return response.data.token;
+  } catch (error) {
+    console.error("DEBUG: Paymob Auth Error:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers,
+    });
+    throw new Error(
+      `Paymob Auth Token Error: ${
+        error.response?.data?.message || error.message
+      }`
+    );
+  }
+};
+
+// Helper function to register Paymob appointment
+const registerAppointment = async (
+  authToken,
+  amountCents,
+  merchantAppointmentId
+) => {
+  try {
+    const response = await axios.post(
+      "https://accept.paymobsolutions.com/api/ecommerce/orders",
+      {
+        auth_token: authToken,
+        delivery_needed: false,
+        amount_cents: amountCents,
+        currency: "EGP",
+        merchant_order_id: merchantAppointmentId.toString(),
+      }
+    );
+    return response.data.id;
+  } catch (error) {
+    throw new Error(
+      `Paymob register Appointment Error: ${
+        error.response?.data?.message || error.message
+      }`
+    );
+  }
+};
+
+// Helper function to get Paymob payment key
+const getPaymentKey = async (
+  authToken,
+  amountCents,
+  appointmentId,
+  billingData,
+  integrationId,
+  origin
+) => {
+  try {
+    const payload = {
+      auth_token: authToken,
+      amount_cents: amountCents,
+      expiration: 3600,
+      order_id: appointmentId,
+      billing_data: billingData,
+      currency: "EGP",
+      integration_id: integrationId,
+      success_url: `${origin}/success`,
+      cancel_url: `${origin}/cancel`,
+    };
+    console.log("DEBUG: getPaymentKey Payload:", payload);
+    const response = await axios.post(
+      "https://accept.paymobsolutions.com/api/acceptance/payment_keys",
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
+    console.log("DEBUG: getPaymentKey Response:", response.data);
+    return response.data.token;
+  } catch (error) {
+    console.error("DEBUG: getPaymentKey Error:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers,
+    });
+    throw new Error(
+      `Paymob get payment key Error: ${
+        error.response?.data?.message || error.message
+      }`
+    );
+  }
+};
+
+// API to pay for appointment with Paymob
+const payAppointmentPaymob = async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
+    const userId = req.userId;
+    const { origin } = req.headers;
+
+    let appointment = await appointmentDoctorModel.findById(appointmentId);
+    let isDoctorAppointment = true;
+    if (!appointment) {
+      appointment = await appointmentLabModel.findById(appointmentId);
+      isDoctorAppointment = false;
+      if (!appointment) {
+        return res.json({ success: false, message: "Appointment Not Found" });
+      }
+    }
+
+    if (appointment.userId !== userId.toString()) {
+      return res.json({ success: false, message: "Unauthorized Action" });
+    }
+
+    if (appointment.payment) {
+      return res.json({ success: false, message: "Appointment Already Paid" });
+    }
+    if (appointment.cancelled) {
+      return res.json({ success: false, message: "Appointment Cancelled" });
+    }
+
+    const amountCents = Math.floor(appointment.amount * 100);
+
+    const user = await userModel.findById(userId);
+    const billingData = {
+      first_name: user.name.split(" ")[0] || "Unknown",
+      last_name: user.name.split(" ")[1] || "Unknown",
+      email: user.email || "no-email@domain.com",
+      phone_number: user.mobile ? `+2${user.mobile}` : "+201000000000",
+      street: "Unknown",
+      building: "Unknown",
+      floor: "Unknown",
+      apartment: "Unknown",
+      city: "Cairo",
+      state: "Cairo",
+      country: "EGY",
+      postal_code: "00000",
+    };
+
+    const authToken = await getAuthToken();
+    const paymobAppointmentId = await registerAppointment(
+      authToken,
+      amountCents,
+      appointmentId
+    );
+    const paymentKey = await getPaymentKey(
+      authToken,
+      amountCents,
+      paymobAppointmentId,
+      billingData,
+      process.env.PAYMOB_INTEGRATION_ID,
+      origin
+    );
+
+    const paymentUrl = `https://accept.paymobsolutions.com/api/acceptance/iframes/${process.env.PAYMOB_IFRAME_ID}?payment_token=${paymentKey}`;
+    res.json({ success: true, url: paymentUrl });
+  } catch (error) {
+    console.error("DEBUG: payAppointmentPaymob Error:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API to pay for appointment with Stripe
+const payAppointmentStripe = async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
+    const userId = req.userId;
+    const { origin } = req.headers;
+
+    let appointment = await appointmentDoctorModel.findById(appointmentId);
+    let isDoctorAppointment = true;
+    if (!appointment) {
+      appointment = await appointmentLabModel.findById(appointmentId);
+      isDoctorAppointment = false;
+      if (!appointment) {
+        return res.json({ success: false, message: "Appointment Not Found" });
+      }
+    }
+
+    if (appointment.userId !== userId.toString()) {
+      return res.json({ success: false, message: "Unauthorized Action" });
+    }
+
+    if (appointment.payment) {
+      return res.json({ success: false, message: "Appointment Already Paid" });
+    }
+    if (appointment.cancelled) {
+      return res.json({ success: false, message: "Appointment Cancelled" });
+    }
+
+    const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+
+    const line_items = [
+      {
+        price_data: {
+          currency: "egp",
+          product_data: {
+            name: isDoctorAppointment
+              ? `Appointment with ${appointment.docData.name}`
+              : `Lab Appointment`,
+          },
+          unit_amount: Math.floor(appointment.amount * 100),
+        },
+        quantity: 1,
+      },
+    ];
+
+    const session = await stripeInstance.checkout.sessions.create({
+      line_items,
+      mode: "payment",
+      success_url: `${origin}/success`,
+      cancel_url: `${origin}/cancel`,
+      metadata: {
+        appointmentId: appointment._id.toString(),
+        userId,
+        isDoctorAppointment: isDoctorAppointment.toString(),
+      },
+    });
+
+    res.json({ success: true, url: session.url });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Existing order payment functions
+const placeOrderStripe = async (req, res) => {
+  try {
+    const { userId, items, address } = req.body;
+    const { origin } = req.headers;
+    if (!address || items.length === 0) {
+      return res.json({ success: false, message: "Invalid Data" });
+    }
+    let productData = [];
+    let amount = await items.reduce(async (acc, item) => {
+      const product = await Product.findById(item.product);
+      productData.push({
+        name: product.name,
+        price: product.offerPrice,
+        quantity: item.quantity,
+      });
+      return (await acc) + product.offerPrice * item.quantity;
+    }, 0);
+    amount += Math.floor(amount * 0);
+    const Appointment = await Appointment.create({
+      userId,
+      items,
+      amount,
+      address,
+      paymentType: "Online",
+    });
+    const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+    const line_items = productData.map((item) => {
+      return {
+        price_data: {
+          currency: "egp",
+          product_data: {
+            name: item.name,
+          },
+          unit_amount: Math.floor(item.price + item.price * 0.14) * 100,
+        },
+        quantity: item.quantity,
+      };
+    });
+    const session = await stripeInstance.checkout.sessions.create({
+      line_items,
+      mode: "payment",
+      success_url: `${origin}/success`,
+      cancel_url: `${origin}/cancel`,
+      metadata: {
+        AppointmentId: Appointment._id.toString(),
+        userId,
+      },
+    });
+    return res.json({ success: true, url: session.url });
+  } catch (error) {
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+const placeOrderPaymob = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { items, address, shippingFee } = req.body;
+    const { origin } = req.headers;
+
+    console.log("DEBUG: placeOrderPaymob Input:", {
+      userId,
+      items,
+      address,
+      shippingFee,
+    });
+
+    if (!address || items.length === 0) {
+      return res.json({ success: false, message: "Invalid Data" });
+    }
+
+    const productTotals = await Promise.all(
+      items.map(async (item) => {
+        const product = await Product.findById(item.product);
+        if (!product) throw new Error(`Product ${item.product} not found`);
+        return product.offerPrice * item.quantity;
+      })
+    );
+    let amount = productTotals.reduce((acc, val) => acc + val, 0);
+    amount += shippingFee || 0;
+    amount += Math.floor(amount * 0);
+    amount = Math.floor(amount * 100);
+    console.log("DEBUG: Calculated Amount (cents):", amount);
+    if (amount <= 0) {
+      throw new Error("Amount must be greater than zero");
+    }
+
+    const Appointment = await Appointment.create({
+      userId,
+      items,
+      amount: amount / 100,
+      address,
+      paymentType: "Online",
+      status: "Pending Payment",
+    });
+    console.log("DEBUG: Created Appointment:", Appointment._id);
+
+    const user = await User.findById(userId);
+    const addressDoc = await Address.findById(address);
+    if (!addressDoc) throw new Error(`Address ${address} not found`);
+    console.log("DEBUG: User Data:", {
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+    });
+    console.log("DEBUG: Address Data:", addressDoc);
+
+    const authToken = await getAuthToken();
+    console.log("DEBUG: Auth Token:", authToken);
+    const paymobAppointmentId = await registerAppointment(
+      authToken,
+      amount,
+      Appointment._id
+    );
+    console.log("DEBUG: Paymob Appointment ID:", paymobAppointmentId);
+
+    const billingData = {
+      first_name: addressDoc.firstName || user.name.split(" ")[0] || "Unknown",
+      last_name: addressDoc.lastName || user.name.split(" ")[1] || "Unknown",
+      email: addressDoc.email || user.email || "no-email@domain.com",
+      phone_number: addressDoc.phone
+        ? `+2${addressDoc.phone}`
+        : user.phone
+        ? `+2${user.phone}`
+        : "+201000000000",
+      street: addressDoc.street || "Unknown",
+      building: addressDoc.building || "Unknown",
+      floor: addressDoc.floor || "Unknown",
+      apartment: addressDoc.apartment || "Unknown",
+      city: addressDoc.city || "Cairo",
+      state: addressDoc.state || "Cairo",
+      country:
+        addressDoc.country?.toUpperCase() === "EGYPT"
+          ? "EGY"
+          : addressDoc.country || "EGY",
+      postal_code: addressDoc.zipcode?.toString() || "00000",
+    };
+    console.log("DEBUG: Billing Data:", billingData);
+
+    const paymentKey = await getPaymentKey(
+      authToken,
+      amount,
+      paymobAppointmentId,
+      billingData,
+      process.env.PAYMOB_INTEGRATION_ID,
+      origin
+    );
+    console.log("DEBUG: Payment Key:", paymentKey);
+
+    const paymentUrl = `https://accept.paymobsolutions.com/api/acceptance/iframes/${process.env.PAYMOB_IFRAME_ID}?payment_token=${paymentKey}`;
+    console.log("DEBUG: Payment URL:", paymentUrl);
+
+    return res.json({ success: true, url: paymentUrl });
+  } catch (error) {
+    console.error("DEBUG: placeOrderPaymob Error:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+// API to get doctors by specialty
+const getDoctorsBySpecialty = async (req, res) => {
+  try {
+    const { specialty } = req.query;
+    const doctors = await doctorModel
+      .find({ specialty: new RegExp(specialty, "i"), available: true })
+      .select("name specialty fees");
+    res.json({ success: true, doctors });
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
@@ -247,4 +1005,13 @@ export {
   bookAppointment,
   listAppointment,
   cancelAppointment,
+  placeOrderStripe,
+  placeOrderPaymob,
+  payAppointmentStripe,
+  payAppointmentPaymob,
+  uploadAudio,
+  uploadFile,
+  analyzeImage,
+  analyzePdfText,
+  getDoctorsBySpecialty,
 };

@@ -14,7 +14,7 @@ const LabsList = () => {
       <h2 className='text-lg font-medium'>All labs</h2>
       <div className='w-full flex flex-wrap gap-4 pt-5 gap-y-6'>
         {
-          labs?.map((item,)=>(
+          labs?.map((item)=>(
             <div className='border border-indigo-200 rounded-xl max-w-56 overflow-hidden cursor-pointer group' key={uuidv4()}>
               <img className='bg-indigo-50 group-hover:bg-blue-600 transition-all duration-500' src={item.image} alt='image'/>
               <div className='p-4'>

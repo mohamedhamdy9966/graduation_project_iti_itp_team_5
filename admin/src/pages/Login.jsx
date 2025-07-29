@@ -4,6 +4,7 @@ import { DoctorContext } from "../context/DoctorContext";
 import { LabContext } from "../context/LabContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 const Login = () => {
   const [state, setState] = useState("Admin");
@@ -12,6 +13,7 @@ const Login = () => {
   const { setLToken } = useContext(LabContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
@@ -114,14 +116,27 @@ const Login = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Password
             </label>
-            <input
-              onChange={(e) => setPassword(e.target.value)}
-              value={password}
-              type="password"
-              placeholder="Enter your password"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-              required
-            />
+            <div className="relative">
+              <input
+                onChange={(e) => setPassword(e.target.value)}
+                value={password}
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-indigo-600 transition-colors"
+              >
+                {showPassword ? (
+                  <AiOutlineEyeInvisible className="h-5 w-5" />
+                ) : (
+                  <AiOutlineEye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
           <button
             type="submit"

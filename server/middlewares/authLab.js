@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 
 const authLab = async (req, res, next) => {
   try {
-    const { lToken } = req.headers;
+    const lToken = req.headers.ltoken || req.headers.lToken;
 
     if (!lToken) {
       return res.json({
@@ -12,7 +12,7 @@ const authLab = async (req, res, next) => {
     }
 
     const token_decode = jwt.verify(lToken, process.env.JWT_SECRET);
-    req.body.docId = token_decode.id;
+    req.labId = token_decode.id;
     next();
   } catch (error) {
     console.log("Auth error:", error.message);

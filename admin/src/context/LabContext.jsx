@@ -11,8 +11,8 @@ const LabContextProvider = (props) => {
     localStorage.getItem("lToken") ? localStorage.getItem("lToken") : ""
   );
   const [appointments, setAppointments] = useState([]);
-  const [dashData, setDashData] = useState(false);
-  const [profileData, setProfileData] = useState(false);
+  const [dashData, setDashData] = useState(null);
+  const [profileData, setProfileData] = useState(null);
 
   const getAppointments = async () => {
     try {

@@ -1,15 +1,30 @@
 import { createContext } from "react";
+import validator from 'validator'
 
 export const AppContext = createContext();
 
 const AppContextProvider = (props) => {
   const currency = "EGP";
   const calculateAge = (dob) => {
+    if (!dob || !validator.isDate(dob)) {
+      return "Unknown"; // Return a string to avoid NaN
+    }
     const today = new Date();
     const birthDate = new Date(dob);
 
+    if (isNaN(birthDate.getTime())) {
+      return "Unknown"; // Handle invalid date
+    }
+
     let age = today.getFullYear() - birthDate.getFullYear();
-    return age;
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+    return age.toString(); // Ensure age is a string
   };
   const months = [
     "",

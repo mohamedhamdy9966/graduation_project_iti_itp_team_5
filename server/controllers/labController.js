@@ -1,13 +1,13 @@
 import labModel from "../models/labModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import appointmentLabModel from "../models/appointmentDoctorModel.js";
+import appointmentLabModel from "../models/appointmentLabModel.js";
 
 const changeLabAvailability = async (req, res) => {
   try {
-    const { docId } = req.body;
-    const docData = await labModel.findById(docId);
-    await labModel.findByIdAndUpdate(docId, {
+    const labId = req.labId;
+    const docData = await labModel.findById(labId);
+    await labModel.findByIdAndUpdate(labId, {
       available: !docData.available,
     });
     res.json({ success: true, message: "Availability Changed" });
@@ -61,8 +61,8 @@ const loginLab = async (req, res) => {
 // API to get lab appointments for lab panel
 const appointmentsLab = async (req, res) => {
   try {
-    const { docId } = req.body;
-    const appointments = await appointmentLabModel.find({ docId });
+    const labId = req.labId;
+    const appointments = await appointmentLabModel.find({ labId });
     res.json({ success: true, appointments });
   } catch (error) {
     res.json({ success: false, message: error.message });
@@ -72,9 +72,10 @@ const appointmentsLab = async (req, res) => {
 // API to mark appointment completed for lab panel
 const appointmentComplete = async (req, res) => {
   try {
-    const { docId, appointmentId } = req.body;
+    const labId = req.labId;
+    const { appointmentId } = req.body;
     const appointmentData = await appointmentLabModel.findById(appointmentId);
-    if (appointmentData && appointmentData.docId === docId) {
+    if (appointmentData && appointmentData.labId === labId) {
       await appointmentLabModel.findByIdAndUpdate(appointmentId, {
         isCompleted: true,
       });
@@ -90,9 +91,10 @@ const appointmentComplete = async (req, res) => {
 // API to cancel appointment completed for lab panel
 const appointmentCancel = async (req, res) => {
   try {
-    const { docId, appointmentId } = req.body;
+    const labId = req.labId;
+    const { appointmentId } = req.body;
     const appointmentData = await appointmentLabModel.findById(appointmentId);
-    if (appointmentData && appointmentData.docId === docId) {
+    if (appointmentData && appointmentData.labId === labId) {
       await appointmentLabModel.findByIdAndUpdate(appointmentId, {
         cancelled: true,
       });
@@ -108,8 +110,8 @@ const appointmentCancel = async (req, res) => {
 // API to get dashboard data for lab panel
 const labDashboard = async (req, res) => {
   try {
-    const { docId } = req.body;
-    const appointments = await appointmentLabModel.find({ docId });
+    const labId = req.labId;
+    const appointments = await appointmentLabModel.find({ labId });
     let earnings = 0;
     appointments.map((item) => {
       if (item.isCompleted || item.payment) {
@@ -137,8 +139,8 @@ const labDashboard = async (req, res) => {
 // API to get lab profile for lab panel
 const labProfile = async (req, res) => {
   try {
-    const { docId } = req.body;
-    const profileData = await labModel.findById(docId).select("-password");
+    const labId = req.labId;
+    const profileData = await labModel.findById(labId).select("-password");
     res.json({ success: true, profileData });
   } catch (error) {
     res.json({ success: false, message: error.message });
@@ -148,8 +150,9 @@ const labProfile = async (req, res) => {
 // API to update lab profile data from lab panel
 const updateLabProfile = async (req, res) => {
   try {
-    const { docId, fees, address, available } = req.body;
-    await labModel.findByIdAndUpdate(docId, { fees, address, available });
+    const labId = req.labId;
+    const { fees, address, available } = req.body;
+    await labModel.findByIdAndUpdate(labId, { fees, address, available });
     res.json({ success: true, message: "Profile Updated" });
   } catch (error) {
     res.json({ success: false, message: error.message });

@@ -4,6 +4,7 @@ import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
@@ -14,10 +15,13 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [bloodType, setBloodType] = useState("");
   const [medicalInsurance, setMedicalInsurance] = useState("");
   const [gender, setGender] = useState("unisex");
   const [allergy, setAllergy] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
@@ -32,6 +36,7 @@ const Login = () => {
           password,
           email,
           mobile,
+          birthDate,
           bloodType,
           medicalInsurance,
           gender,
@@ -126,6 +131,20 @@ const Login = () => {
 
             <div className="w-full">
               <label className="block text-indigo-800 font-semibold text-sm mb-2">
+                Birth Date
+              </label>
+              <input
+                type="date"
+                className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                onChange={(e) => setBirthDate(e.target.value)}
+                value={birthDate}
+                required
+                placeholder="Select your birth date"
+              />
+            </div>
+
+            <div className="w-full">
+              <label className="block text-indigo-800 font-semibold text-sm mb-2">
                 Blood Type
               </label>
               <select
@@ -184,14 +203,25 @@ const Login = () => {
               <label className="block text-indigo-800 font-semibold text-sm mb-2">
                 Medical Insurance
               </label>
-              <input
-                type="text"
+              <select
                 className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
                 onChange={(e) => setMedicalInsurance(e.target.value)}
                 value={medicalInsurance}
                 required
-                placeholder="Enter your insurance provider"
-              />
+              >
+                <option value="" disabled>
+                  Select Insurance Provider
+                </option>
+                <option value="None">None</option>
+                <option value="Blue Cross Blue Shield">
+                  Blue Cross Blue Shield
+                </option>
+                <option value="Aetna">Aetna</option>
+                <option value="Cigna">Cigna</option>
+                <option value="UnitedHealthcare">UnitedHealthcare</option>
+                <option value="Medicare">Medicare</option>
+                <option value="Medicaid">Medicaid</option>
+              </select>
             </div>
           </>
         )}
@@ -214,14 +244,28 @@ const Login = () => {
           <label className="block text-indigo-800 font-semibold text-sm mb-2">
             Password
           </label>
-          <input
-            type="password"
-            className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-            onChange={(e) => setPassword(e.target.value)}
-            value={password}
-            required
-            placeholder="Enter your password"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+              onChange={(e) => setPassword(e.target.value)}
+              value={password}
+              required
+              placeholder="Enter your password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-indigo-500 hover:text-indigo-600 transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <AiOutlineEyeInvisible className="h-5 w-5" />
+              ) : (
+                <AiOutlineEye className="h-5 w-5" />
+              )}
+            </button>
+          </div>
         </div>
 
         {state === "Sign Up" && (
@@ -229,14 +273,32 @@ const Login = () => {
             <label className="block text-indigo-800 font-semibold text-sm mb-2">
               Confirm Password
             </label>
-            <input
-              type="password"
-              className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              value={confirmPassword}
-              required
-              placeholder="Confirm your password"
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                value={confirmPassword}
+                required
+                placeholder="Confirm your password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-indigo-500 hover:text-indigo-600 transition-colors"
+                aria-label={
+                  showConfirmPassword
+                    ? "Hide confirm password"
+                    : "Show confirm password"
+                }
+              >
+                {showConfirmPassword ? (
+                  <AiOutlineEyeInvisible className="h-5 w-5" />
+                ) : (
+                  <AiOutlineEye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
         )}
 

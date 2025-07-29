@@ -20,7 +20,7 @@ adminRouter.post("/add-doctor", authAdmin, upload.single("image"), addDoctor);
 adminRouter.post("/add-lab", authAdmin, upload.single("image"), addLab);
 adminRouter.post("/login", loginAdmin);
 adminRouter.post("/all-doctors", authAdmin, allDoctors);
-adminRouter.post("/all-labs", authAdmin, allLabs);
+adminRouter.get("/all-labs", authAdmin, allLabs);
 adminRouter.post("/change-doctor-availability", authAdmin, changeDoctorAvailability);
 adminRouter.post("/change-lab-availability", authAdmin, changeLabAvailability);
 adminRouter.get("/appointments", authAdmin, appointmentsAdmin);

@@ -15,7 +15,7 @@ const appointmentSchema = new mongoose.Schema({
 });
 
 const appointmentLabModel =
-  mongoose.models.appointment ||
-  mongoose.model("appointment", appointmentSchema);
+  mongoose.models.appointmentLab ||
+  mongoose.model("appointmentLab", appointmentSchema);
 
 export default appointmentLabModel;

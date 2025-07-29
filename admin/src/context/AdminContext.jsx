@@ -36,11 +36,9 @@ const AdminContextProvider = (props) => {
 
   const getAllLabs = async () => {
     try {
-      const { data } = await axios.post(
-        backendUrl + "/api/admin/all-labs",
-        {},
-        { headers: { aToken } }
-      );
+      const { data } = await axios.get(backendUrl + "/api/admin/all-labs", {
+        headers: { aToken },
+      });
       console.log("All Labs Response:", data);
       if (data.success) {
         setLabs(data.labs);
@@ -55,7 +53,7 @@ const AdminContextProvider = (props) => {
   const changeDoctorAvailability = async (docId) => {
     try {
       const { data } = await axios.post(
-        backendUrl + "/api/admin/change-availability",
+        backendUrl + "/api/admin/change-doctor-availability",
         { docId },
         { headers: { aToken } }
       );
@@ -73,7 +71,7 @@ const AdminContextProvider = (props) => {
   const changeLabAvailability = async (labId) => {
     try {
       const { data } = await axios.post(
-        backendUrl + "/api/admin/change-availability",
+        backendUrl + "/api/admin/change-lab-availability",
         { labId },
         { headers: { aToken } }
       );
@@ -105,11 +103,11 @@ const AdminContextProvider = (props) => {
     }
   };
 
-  const cancelAppointment = async (appointmentId) => {
+  const cancelAppointment = async (appointmentId, type) => {
     try {
       const { data } = await axios.post(
         backendUrl + "/api/admin/cancel-appointment",
-        { appointmentId },
+        { appointmentId, type },
         { headers: { aToken } }
       );
       if (data.success) {
@@ -147,6 +145,7 @@ const AdminContextProvider = (props) => {
     getAllDoctors,
     getAllLabs,
     changeDoctorAvailability,
+    changeLabAvailability,
     appointments,
     getAllAppointments,
     cancelAppointment,

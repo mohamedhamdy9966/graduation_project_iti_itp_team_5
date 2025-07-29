@@ -5,7 +5,7 @@ import appointmentDoctorModel from "../models/appointmentDoctorModel.js";
 
 const changeDoctorAvailability = async (req, res) => {
   try {
-    const { docId } = req.body;
+    const docId = req.docId;
     const docData = await doctorModel.findById(docId);
     await doctorModel.findByIdAndUpdate(docId, {
       available: !docData.available,
@@ -61,7 +61,7 @@ const loginDoctor = async (req, res) => {
 // API to get doctor appointments for doctor panel
 const appointmentsDoctor = async (req, res) => {
   try {
-    const { docId } = req.body;
+    const docId = req.docId;
     const appointments = await appointmentDoctorModel.find({ docId });
     res.json({ success: true, appointments });
   } catch (error) {
@@ -73,7 +73,9 @@ const appointmentsDoctor = async (req, res) => {
 const appointmentComplete = async (req, res) => {
   try {
     const { docId, appointmentId } = req.body;
-    const appointmentData = await appointmentDoctorModel.findById(appointmentId);
+    const appointmentData = await appointmentDoctorModel.findById(
+      appointmentId
+    );
     if (appointmentData && appointmentData.docId === docId) {
       await appointmentDoctorModel.findByIdAndUpdate(appointmentId, {
         isCompleted: true,
@@ -91,7 +93,9 @@ const appointmentComplete = async (req, res) => {
 const appointmentCancel = async (req, res) => {
   try {
     const { docId, appointmentId } = req.body;
-    const appointmentData = await appointmentDoctorModel.findById(appointmentId);
+    const appointmentData = await appointmentDoctorModel.findById(
+      appointmentId
+    );
     if (appointmentData && appointmentData.docId === docId) {
       await appointmentDoctorModel.findByIdAndUpdate(appointmentId, {
         cancelled: true,
@@ -108,7 +112,7 @@ const appointmentCancel = async (req, res) => {
 // API to get dashboard data for doctor panel
 const doctorDashboard = async (req, res) => {
   try {
-    const { docId } = req.body;
+    const docId = req.docId;
     const appointments = await appointmentDoctorModel.find({ docId });
     let earnings = 0;
     appointments.map((item) => {
@@ -137,7 +141,7 @@ const doctorDashboard = async (req, res) => {
 // API to get doctor profile for doctor panel
 const doctorProfile = async (req, res) => {
   try {
-    const { docId } = req.body;
+    const docId = req.docId;
     const profileData = await doctorModel.findById(docId).select("-password");
     res.json({ success: true, profileData });
   } catch (error) {

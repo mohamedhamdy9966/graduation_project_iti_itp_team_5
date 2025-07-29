@@ -18,7 +18,7 @@ const MyProfile = () => {
       formData.append("phone", userData.mobile);
       formData.append("address", JSON.stringify(userData.address));
       formData.append("gender", userData.gender);
-      formData.append("dob", userData.dob);
+      formData.append("birthDate", userData.birthDate);
       formData.append("medicalInsurance", userData.medicalInsurance);
       // Send allergy as an object with a list property
       formData.append("allergy", JSON.stringify(userData.allergy || {}));
@@ -174,8 +174,7 @@ const MyProfile = () => {
                 Medical Insurance:
               </label>
               {isEdit ? (
-                <input
-                  type="text"
+                <select
                   value={userData.medicalInsurance}
                   onChange={(e) =>
                     setUserData((prev) => ({
@@ -184,8 +183,20 @@ const MyProfile = () => {
                     }))
                   }
                   className="sm:col-span-2 p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
-                  placeholder="Enter your insurance provider"
-                />
+                >
+                  <option value="" disabled>
+                    Select Insurance Provider
+                  </option>
+                  <option value="None">None</option>
+                  <option value="Blue Cross Blue Shield">
+                    Blue Cross Blue Shield
+                  </option>
+                  <option value="Aetna">Aetna</option>
+                  <option value="Cigna">Cigna</option>
+                  <option value="UnitedHealthcare">UnitedHealthcare</option>
+                  <option value="Medicare">Medicare</option>
+                  <option value="Medicaid">Medicaid</option>
+                </select>
               ) : (
                 <p className="sm:col-span-2 text-indigo-600 font-medium">
                   {userData.medicalInsurance}
@@ -231,14 +242,19 @@ const MyProfile = () => {
                 {isEdit ? (
                   <input
                     type="date"
-                    value={userData.dob}
+                    value={userData.birthDate}
                     onChange={(e) =>
-                      setUserData((prev) => ({ ...prev, dob: e.target.value }))
+                      setUserData((prev) => ({
+                        ...prev,
+                        birthDate: e.target.value,
+                      }))
                     }
                     className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
                   />
                 ) : (
-                  <p className="text-indigo-600 font-medium">{userData.dob}</p>
+                  <p className="text-indigo-600 font-medium">
+                    {userData.birthDate}
+                  </p>
                 )}
               </div>
               <div>
@@ -254,7 +270,7 @@ const MyProfile = () => {
                     type="text"
                     value={
                       userData.allergy && typeof userData.allergy === "object"
-                        ? Object.values(userData.allergy).join(", ")
+                        ? userData.allergy.list.join(", ")
                         : ""
                     }
                     onChange={(e) =>
@@ -272,8 +288,8 @@ const MyProfile = () => {
                   <p className="text-indigo-600 font-medium">
                     {userData.allergy &&
                     typeof userData.allergy === "object" &&
-                    Object.values(userData.allergy).length > 0
-                      ? Object.values(userData.allergy).join(", ")
+                    userData.allergy.list.length > 0
+                      ? userData.allergy.list.join(", ")
                       : "None"}
                   </p>
                 )}

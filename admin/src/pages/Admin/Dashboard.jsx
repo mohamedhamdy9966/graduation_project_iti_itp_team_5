@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { assets } from "../../../../client/src/assets/assets_admin/assets";
 import { v4 as uuidv4 } from "uuid";
 import { AppContext } from "../../context/AppContext";
+import { FaUserNurse, FaCapsules } from "react-icons/fa";
 
 const Dashboard = () => {
   const { aToken, getDashData, cancelAppointment, dashData } =
@@ -26,6 +27,26 @@ const Dashboard = () => {
                 {dashData.doctors}
               </p>
               <p className="text-gray-400">Doctors</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white p-4 min-w-52 border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all">
+            <FaUserNurse/>
+            <div>
+              <p className="text-xl font-semibold text-gray-600">
+                {dashData.labs}
+              </p>
+              <p className="text-gray-400">Labs</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white p-4 min-w-52 border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all">
+            <FaCapsules/>
+            <div>
+              <p className="text-xl font-semibold text-gray-600">
+                {dashData.drugs}
+              </p>
+              <p className="text-gray-400">Drugs</p>
             </div>
           </div>
 
@@ -85,7 +106,7 @@ const Dashboard = () => {
                   <img
                     onClick={() => cancelAppointment(item._id)}
                     className="w-10 cursor-pointer"
-                    src={assets.chats_icon}
+                    src={assets.cancel_icon}
                     alt="cancel"
                   />
                 )}
