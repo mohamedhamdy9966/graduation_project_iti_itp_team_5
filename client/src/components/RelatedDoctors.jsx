@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
+import { Helmet } from "react-helmet";
 import { AppContext } from "../context/AppContext";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +20,38 @@ const RelatedDoctors = ({ specialty, docId }) => {
 
   return (
     <div className="flex flex-col items-center gap-4 my-16 text-gray-900 md:mx-10">
+      <Helmet>
+        <title>Related {specialty} Doctors - Roshetta</title>
+        <meta
+          name="description"
+          content={`Explore trusted ${specialty} doctors on Roshetta. Book appointments with top specialists in your area.`}
+        />
+        <meta
+          name="keywords"
+          content={`related doctors, ${specialty}, book appointments, healthcare, Roshetta`}
+        />
+        <link
+          rel="canonical"
+          href={`https://www.roshetta.com/doctors/${specialty
+            .toLowerCase()
+            .replace(/ /g, "-")}`}
+        />
+        <meta
+          property="og:title"
+          content={`Related ${specialty} Doctors - Roshetta`}
+        />
+        <meta
+          property="og:description"
+          content={`Explore trusted ${specialty} doctors on Roshetta. Book appointments with top specialists in your area.`}
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:url"
+          content={`https://www.roshetta.com/doctors/${specialty
+            .toLowerCase()
+            .replace(/ /g, "-")}`}
+        />
+      </Helmet>
       <h2 className="text-3xl font-medium">Top Doctors to Book</h2>
       <p className="sm:w-1/3 text-center text-sm">
         Simply browse through our extensive list of trusted doctors

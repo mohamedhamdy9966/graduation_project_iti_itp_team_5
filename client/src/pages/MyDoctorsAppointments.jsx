@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
+import { Helmet } from "react-helmet";
 import { AppContext } from "../context/AppContext";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
@@ -30,7 +31,7 @@ const MyDoctorsAppointments = () => {
     );
   };
   const navigate = useNavigate();
-  
+
   const getUserAppointments = async () => {
     try {
       const { data } = await axios.get(backendUrl + "/api/user/appointments", {
@@ -105,6 +106,34 @@ const MyDoctorsAppointments = () => {
 
   return (
     <div className="px-4 md:px-10 mt-12">
+      <Helmet>
+        <title>My Appointments - Your Healthcare Platform</title>
+        <meta
+          name="description"
+          content="View and manage your doctor and lab appointments on Your Healthcare Platform. Pay, cancel, or track your medical appointments easily."
+        />
+        <meta
+          name="keywords"
+          content="my appointments, doctor appointments, lab appointments, healthcare, manage appointments, payment"
+        />
+        <link
+          rel="canonical"
+          href="https://www.yourhealthcare.com/my-appointments"
+        />
+        <meta
+          property="og:title"
+          content="My Appointments - Your Healthcare Platform"
+        />
+        <meta
+          property="og:description"
+          content="View and manage your doctor and lab appointments on Your Healthcare Platform. Pay, cancel, or track your medical appointments easily."
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:url"
+          content="https://www.yourhealthcare.com/my-appointments"
+        />
+      </Helmet>
       <p className="pb-3 text-lg font-semibold text-zinc-700 border-b mb-4">
         My Appointments
       </p>
@@ -114,7 +143,6 @@ const MyDoctorsAppointments = () => {
             key={uuidv4()}
             className="flex flex-col md:flex-row md:items-start gap-4 border rounded-lg p-4 shadow-sm"
           >
-            {/* Doctor/Lab Image */}
             <div className="flex-shrink-0">
               <img
                 className="w-32 h-32 object-cover rounded bg-indigo-50"
@@ -122,8 +150,6 @@ const MyDoctorsAppointments = () => {
                 alt={item.labId ? "lab" : "doctor"}
               />
             </div>
-
-            {/* Doctor/Lab Info */}
             <div className="flex-1 text-sm text-zinc-600 space-y-1">
               <p className="text-neutral-800 font-semibold text-base">
                 {item.docData.name}
@@ -148,7 +174,6 @@ const MyDoctorsAppointments = () => {
               </p>
             </div>
             <div></div>
-            {/* Actions */}
             <div className="flex flex-col justify-between gap-3 mt-4 md:mt-0">
               {!item.cancelled && item.payment && !item.isCompleted && (
                 <button className="sm:min-w-48 py-2 border text-stone-500 bg-indigo-50">

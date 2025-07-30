@@ -1,4 +1,5 @@
 import React, { useContext, useState } from "react";
+import { Helmet } from "react-helmet";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets_frontend/assets";
 import axios from "axios";
@@ -20,7 +21,6 @@ const MyProfile = () => {
       formData.append("gender", userData.gender);
       formData.append("birthDate", userData.birthDate);
       formData.append("medicalInsurance", userData.medicalInsurance);
-      // Send allergy as an object with a list property
       formData.append("allergy", JSON.stringify(userData.allergy || {}));
 
       if (image) {
@@ -49,8 +49,36 @@ const MyProfile = () => {
   return (
     userData && (
       <div className="max-w-3xl mx-auto p-6 sm:p-8 bg-white rounded-2xl shadow-xl border border-indigo-100 mt-8 mb-12">
+        <Helmet>
+          <title>My Profile - Your Healthcare Platform</title>
+          <meta
+            name="description"
+            content="Manage your profile on Your Healthcare Platform. Update your personal information, medical insurance, and allergies to streamline your healthcare experience."
+          />
+          <meta
+            name="keywords"
+            content="user profile, manage profile, healthcare, medical information, update profile"
+          />
+          <link
+            rel="canonical"
+            href="https://www.yourhealthcare.com/my-profile"
+          />
+          <meta
+            property="og:title"
+            content="My Profile - Your Healthcare Platform"
+          />
+          <meta
+            property="og:description"
+            content="Manage your profile on Your Healthcare Platform. Update your personal information, medical insurance, and allergies to streamline your healthcare experience."
+          />
+          <meta property="og:type" content="website" />
+          <meta
+            property="og:url"
+            content="https://www.yourhealthcare.com/my-profile"
+          />
+          <meta property="og:image" content={userData.image} />
+        </Helmet>
         <div className="space-y-8">
-          {/* Profile Image and Name */}
           <div className="flex flex-col sm:flex-row items-center gap-6 bg-gradient-to-r from-indigo-50 to-white p-6 rounded-xl">
             <div className="relative group">
               {isEdit ? (
@@ -106,7 +134,6 @@ const MyProfile = () => {
 
           <hr className="border-indigo-100" />
 
-          {/* Contact Information */}
           <div>
             <h3 className="text-xl font-semibold text-indigo-900 mb-4">
               Contact Information
@@ -205,7 +232,6 @@ const MyProfile = () => {
             </div>
           </div>
 
-          {/* Basic Information */}
           <div>
             <h3 className="text-xl font-semibold text-indigo-900 mb-4">
               Basic Information
@@ -297,7 +323,6 @@ const MyProfile = () => {
             </div>
           </div>
 
-          {/* Action Button */}
           <div className="pt-4 flex justify-center">
             <button
               onClick={isEdit ? updateUserProfileData : () => setIsEdit(true)}

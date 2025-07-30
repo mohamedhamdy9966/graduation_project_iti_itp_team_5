@@ -1,4 +1,5 @@
 import React, { useContext } from "react";
+import { Helmet } from "react-helmet";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
@@ -9,20 +10,37 @@ const TopDoctors = () => {
 
   return (
     <div className="flex flex-col items-center gap-4 my-16 px-4 md:px-10 text-gray-900">
+      <Helmet>
+        <title>Top Doctors - Roshetta</title>
+        <meta
+          name="description"
+          content="Discover top doctors on Roshetta. Browse our trusted healthcare professionals and book appointments easily."
+        />
+        <meta
+          name="keywords"
+          content="top doctors, book appointments, healthcare, Roshetta, trusted doctors"
+        />
+        <link rel="canonical" href="https://www.roshetta.com/doctors" />
+        <meta property="og:title" content="Top Doctors - Roshetta" />
+        <meta
+          property="og:description"
+          content="Discover top doctors on Roshetta. Browse our trusted healthcare professionals and book appointments easily."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.roshetta.com/doctors" />
+      </Helmet>
       <h2 className="text-3xl font-semibold text-center">
         Top Doctors to Book
       </h2>
       <p className="sm:w-1/2 text-center text-sm text-gray-600">
         Simply browse through our extensive list of trusted doctors.
       </p>
-
-      {/* Cards Grid */}
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-6">
         {doctors.slice(0, 8).map((item) => (
           <div
             key={uuidv4()}
             onClick={() => {
-              navigate(`/my-appointments/${item._id}`); // Updated path
+              navigate(`/my-appointments/${item._id}`);
               scrollTo(0, 0);
             }}
             className="border border-blue-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-2 cursor-pointer transition-all duration-300 bg-white"
@@ -51,8 +69,6 @@ const TopDoctors = () => {
           </div>
         ))}
       </div>
-
-      {/* More Button */}
       <button
         onClick={() => {
           navigate("/doctors");

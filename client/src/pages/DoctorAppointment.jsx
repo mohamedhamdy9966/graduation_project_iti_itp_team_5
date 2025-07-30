@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
+import { Helmet } from "react-helmet";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets_frontend/assets";
@@ -70,18 +71,15 @@ const DoctorAppointment = () => {
       endTime.setHours(21, 0, 0, 0);
 
       if (i === 0) {
-        // For today, start from next hour or 10 AM, whichever is later
         const nextHour = Math.max(currentDate.getHours() + 1, 10);
         currentDate.setHours(nextHour);
         currentDate.setMinutes(currentDate.getMinutes() > 30 ? 30 : 0);
       } else {
-        // For future days, start from 10 AM
         currentDate.setHours(10, 0, 0, 0);
       }
 
       let timeSlots = [];
 
-      // Generate time slots every 30 minutes
       while (currentDate < endTime) {
         let formattedTime = currentDate.toLocaleTimeString([], {
           hour: "2-digit",
@@ -95,21 +93,18 @@ const DoctorAppointment = () => {
         const slotDate = day + "_" + month + "_" + year;
         const slotTime = formattedTime;
 
-        // Check if slot is available (not booked)
         const slotsBooked = docInfo.slotsBooked || {};
         const isSlotAvailable = !(
           slotsBooked[slotDate] && slotsBooked[slotDate].includes(slotTime)
         );
 
         if (isSlotAvailable) {
-          // Add available slots to array
           timeSlots.push({
             dateTime: new Date(currentDate),
             time: formattedTime,
           });
         }
 
-        // Increment current time by 30 minutes
         currentDate.setMinutes(currentDate.getMinutes() + 30);
       }
 
@@ -121,7 +116,38 @@ const DoctorAppointment = () => {
 
   return (
     <div className="px-4 md:px-16 pt-8">
-      {/* Doctor Info Section */}
+      <Helmet>
+        <title>
+          Book Appointment with {docInfo.name} - Your Healthcare Platform
+        </title>
+        <meta
+          name="description"
+          content={`Schedule an appointment with ${docInfo.name}, a ${docInfo.specialty} specialist with ${docInfo.experience} experience. Book now for expert medical care.`}
+        />
+        <meta
+          name="keywords"
+          content={`book doctor appointment, ${docInfo.name}, ${docInfo.specialty}, healthcare, medical consultation`}
+        />
+        <link
+          rel="canonical"
+          href={`https://www.yourhealthcare.com/doctors/${docId}`}
+        />
+        <meta
+          property="og:title"
+          content={`Book Appointment with ${docInfo.name} - Your Healthcare Platform`}
+        />
+        <meta
+          property="og:description"
+          content={`Schedule an appointment with ${docInfo.name}, a ${docInfo.specialty} specialist with ${docInfo.experience} experience. Book now for expert medical care.`}
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:url"
+          content={`https://www.yourhealthcare.com/doctors/${docId}`}
+        />
+        <meta property="og:image" content={docInfo.image} />
+      </Helmet>
+
       <div className="flex flex-col md:flex-row gap-6">
         <img
           src={docInfo.image}
@@ -159,11 +185,9 @@ const DoctorAppointment = () => {
         </div>
       </div>
 
-      {/* Booking Section */}
       <div className="mt-10 text-gray-800">
         <p className="font-semibold mb-3">Booking Slots</p>
 
-        {/* Date Slots */}
         <div className="flex overflow-x-auto gap-3 pb-3">
           {docSlots.map((slots, index) => (
             <div
@@ -181,7 +205,6 @@ const DoctorAppointment = () => {
           ))}
         </div>
 
-        {/* Time Slots */}
         <div className="flex overflow-x-auto gap-3 mt-4">
           {docSlots[slotIndex]?.map((slot) => (
             <p
@@ -211,7 +234,6 @@ const DoctorAppointment = () => {
         </button>
       </div>
 
-      {/* Related Doctors */}
       <div className="mt-16">
         <RelatedDoctors docId={docId} specialty={docInfo.specialty} />
       </div>

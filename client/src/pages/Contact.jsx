@@ -1,9 +1,29 @@
-import React from "react";
+import { Helmet } from "react-helmet";
 import { assets } from "../assets/assets_frontend/assets";
 
 const Contact = () => {
   return (
     <div className="px-4 md:px-16 lg:px-24 py-10">
+      <Helmet>
+        <title>Contact Us - Your Company Name</title>
+        <meta
+          name="description"
+          content="Get in touch with Your Company Name. Find our office location, contact details, and explore career opportunities with us."
+        />
+        <meta
+          name="keywords"
+          content="contact us, your company name, office location, career opportunities"
+        />
+        <link rel="canonical" href="https://www.yourcompany.com/contact" />
+        <meta property="og:title" content="Contact Us - Your Company Name" />
+        <meta
+          property="og:description"
+          content="Get in touch with Your Company Name. Find our office location, contact details, and explore career opportunities with us."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.yourcompany.com/contact" />
+        <meta property="og:image" content={assets.contact_image} />
+      </Helmet>
       <div className="text-center text-2xl text-gray-500 mb-10">
         <p>
           Contact <span className="text-gray-700 font-semibold">Us</span>

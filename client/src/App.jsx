@@ -10,12 +10,12 @@ import Home from "./pages/Home";
 import DoctorAppointment from "./pages/DoctorAppointment";
 import LabAppointment from "./pages/LabAppointment";
 import Navbar from "./components/Navbar";
-import DrugAppointment from "./pages/DrugAppointment";
 import Footer from "./components/Footer";
 import Login from "./pages/Login";
 import {ToastContainer} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Chatbot from "./components/Chatbot";
+import DrugOrder from "./pages/DrugOrder";
 
 const App = () => {
   return (
@@ -37,7 +37,7 @@ const App = () => {
         <Route path="/my-appointments" element={<MyAppointments />} />
         <Route path="/my-appointments/:docId" element={<DoctorAppointment />} />
         <Route path="/my-appointments/:labId" element={<LabAppointment />} />
-        <Route path="/my-appointments/:orderId" element={<DrugAppointment />} />
+        <Route path="/my-appointments/:orderId" element={<DrugOrder />} />
       </Routes>
       <Footer/>
       <Chatbot/>

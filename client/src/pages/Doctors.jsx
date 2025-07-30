@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
+import { Helmet } from "react-helmet";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { v4 as uuidv4 } from "uuid";
@@ -49,6 +50,31 @@ const Doctors = () => {
   if (!doctors || doctors.length === 0) {
     return (
       <div className="px-4 md:px-16 pt-8 max-w-7xl mx-auto">
+        <Helmet>
+          <title>Find Doctors - Your Healthcare Platform</title>
+          <meta
+            name="description"
+            content="Find expert doctors across various specialties at Your Healthcare Platform. Browse and book appointments with trusted medical professionals."
+          />
+          <meta
+            name="keywords"
+            content="find doctors, medical specialists, book appointments, healthcare, general physician, gynecologist, dermatologist, pediatrician, surgery, ENT"
+          />
+          <link rel="canonical" href="https://www.yourhealthcare.com/doctors" />
+          <meta
+            property="og:title"
+            content="Find Doctors - Your Healthcare Platform"
+          />
+          <meta
+            property="og:description"
+            content="Find expert doctors across various specialties at Your Healthcare Platform. Browse and book appointments with trusted medical professionals."
+          />
+          <meta property="og:type" content="website" />
+          <meta
+            property="og:url"
+            content="https://www.yourhealthcare.com/doctors"
+          />
+        </Helmet>
         <div className="animate-pulse flex space-x-4">
           <div className="flex-1 space-y-6 py-6">
             <div className="h-8 bg-gray-200 rounded w-1/3"></div>
@@ -65,7 +91,68 @@ const Doctors = () => {
 
   return (
     <div className="px-4 md:px-16 pt-8 pb-12 max-w-7xl mx-auto">
-      {/* Header */}
+      <Helmet>
+        <title>
+          {specialty
+            ? `${
+                urlSpecialtyMap[specialty] || specialty
+              } Specialists - Your Healthcare Platform`
+            : "Find Doctors - Your Healthcare Platform"}
+        </title>
+        <meta
+          name="description"
+          content={
+            specialty
+              ? `Browse expert ${
+                  urlSpecialtyMap[specialty.toLowerCase()] || specialty
+                } doctors at Your Healthcare Platform. Book appointments with trusted specialists.`
+              : "Find expert doctors across various specialties at Your Healthcare Platform. Browse and book appointments with trusted medical professionals."
+          }
+        />
+        <meta
+          name="keywords"
+          content={
+            specialty
+              ? `find ${
+                  urlSpecialtyMap[specialty.toLowerCase()] || specialty
+                } doctors, book appointments, healthcare, medical specialists`
+              : "find doctors, medical specialists, book appointments, healthcare, general physician, gynecologist, dermatologist, pediatrician, surgery, ENT"
+          }
+        />
+        <link
+          rel="canonical"
+          href={`https://www.yourhealthcare.com/doctors${
+            specialty ? `/${specialty}` : ""
+          }`}
+        />
+        <meta
+          property="og:title"
+          content={
+            specialty
+              ? `${
+                  urlSpecialtyMap[specialty] || specialty
+                } Specialists - Your Healthcare Platform`
+              : "Find Doctors - Your Healthcare Platform"
+          }
+        />
+        <meta
+          property="og:description"
+          content={
+            specialty
+              ? `Browse expert ${
+                  urlSpecialtyMap[specialty.toLowerCase()] || specialty
+                } doctors at Your Healthcare Platform. Book appointments with trusted specialists.`
+              : "Find expert doctors across various specialties at Your Healthcare Platform. Browse and book appointments with trusted medical professionals."
+          }
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:url"
+          content={`https://www.yourhealthcare.com/doctors${
+            specialty ? `/${specialty}` : ""
+          }`}
+        />
+      </Helmet>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
           {specialty
@@ -82,7 +169,6 @@ const Doctors = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Filters Sidebar */}
         <div className="lg:w-64 flex-shrink-0">
           <button
             className={`lg:hidden mb-4 py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
@@ -141,7 +227,6 @@ const Doctors = () => {
           </div>
         </div>
 
-        {/* Doctor Cards */}
         <div className="flex-1">
           {filterDoc.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">

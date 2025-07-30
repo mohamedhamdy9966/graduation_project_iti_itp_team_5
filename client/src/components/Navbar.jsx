@@ -1,4 +1,5 @@
 import { useContext, useState } from "react";
+import { Helmet } from "react-helmet";
 import { assets } from "../assets/assets_frontend/assets";
 import { NavLink, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
@@ -26,7 +27,26 @@ const Navbar = () => {
 
   return (
     <nav className="flex items-center justify-between px-4 sm:px-6 lg:px-16 py-4 bg-gradient-to-r from-indigo-50 via-white to-indigo-50 border-b border-indigo-100 shadow-lg sticky top-0 z-50">
-      {/* Logo and Mobile Menu Button */}
+      <Helmet>
+        <title>Navigation - Roshetta</title>
+        <meta
+          name="description"
+          content="Navigate Roshetta to book appointments with doctors, labs, and pharmacies. Access your profile, appointments, and more."
+        />
+        <meta
+          name="keywords"
+          content="navigation, healthcare, doctor appointments, labs, pharmacies, Roshetta"
+        />
+        <link rel="canonical" href="https://www.roshetta.com/" />
+        <meta property="og:title" content="Navigation - Roshetta" />
+        <meta
+          property="og:description"
+          content="Navigate Roshetta to book appointments with doctors, labs, and pharmacies. Access your profile, appointments, and more."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.roshetta.com/" />
+        <meta property="og:image" content={assets.logo} />
+      </Helmet>
       <div className="flex items-center gap-6">
         <img
           onClick={() => navigate("/")}
@@ -34,8 +54,6 @@ const Navbar = () => {
           src={assets.logo}
           alt="Roshetta logo"
         />
-
-        {/* Mobile Menu Button */}
         <button
           onClick={() => setShowMenu(true)}
           className="md:hidden p-2 rounded-lg text-indigo-700 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-300"
@@ -43,8 +61,6 @@ const Navbar = () => {
           <img className="w-7 h-7" src={assets.menu_icon} alt="Menu" />
         </button>
       </div>
-
-      {/* Desktop Nav */}
       <div className="hidden md:flex items-center gap-12">
         <ul className="flex items-center gap-8 text-base font-semibold text-indigo-800 tracking-wide">
           {navItems.map((item) => (
@@ -63,8 +79,6 @@ const Navbar = () => {
             </NavLink>
           ))}
         </ul>
-
-        {/* User Profile / Auth */}
         <div className="flex items-center gap-6 ml-8">
           {token && userData ? (
             <div className="relative">
@@ -146,8 +160,6 @@ const Navbar = () => {
           )}
         </div>
       </div>
-
-      {/* Mobile Drawer */}
       <div
         className={`fixed inset-0 z-50 transform ${
           showMenu ? "translate-x-0" : "translate-x-full"
