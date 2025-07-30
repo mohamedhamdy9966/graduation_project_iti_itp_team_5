@@ -16,6 +16,11 @@ import {
   analyzeImage,
   analyzePdfText,
   getDoctorsBySpecialty,
+  isAuth,
+  sendVerifyOtp,
+  verifyEmail,
+  sendResetOtp,
+  resetPassword,
 } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
 import upload from "../middlewares/multer.js";
@@ -28,6 +33,11 @@ const userRouter = express.Router();
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
 userRouter.get("/get-profile", authUser, getProfile);
+userRouter.get("/is-auth", authUser, isAuth);
+userRouter.post("/send-verify-otp", authUser, sendVerifyOtp);
+userRouter.post("/verify-account", verifyEmail);
+userRouter.post("/send-reset-otp", sendResetOtp);
+userRouter.post("/reset-password", resetPassword);
 userRouter.post(
   "/update-profile",
   upload.single("image"),

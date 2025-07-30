@@ -11,6 +11,12 @@ const userSchema = new mongoose.Schema(
       default: "0000000000",
     },
     password: { type: String, required: true },
+    verifyOtp: {type: String, default: ''},
+    verifyOtpExpireAt: {type: Number, default: 0},
+    isAccountVerified: {type: Boolean, default: false},
+    resetOtp: {type: String, default: ''},
+    resetOtpExpireAt: {type: Number, default: ''},
+    cartItems: { type: Object, default: {} },
     bloodType: { type: String, required: true },
     medicalInsurance: { type: String, required: true },
     image: {

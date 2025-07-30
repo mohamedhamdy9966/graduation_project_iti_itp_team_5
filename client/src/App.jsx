@@ -12,16 +12,18 @@ import LabAppointment from "./pages/LabAppointment";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Login from "./pages/Login";
-import {ToastContainer} from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Chatbot from "./components/Chatbot";
+import VerifyEmail from "./components/VerifyEmail";
+import ResetPassword from "./components/ResetPassword";
 import DrugOrder from "./pages/DrugOrder";
 
 const App = () => {
   return (
     <div className="mx-4 sm:mx-[10%] app-container">
-      <ToastContainer/>
-      <Navbar/>
+      <ToastContainer />
+      <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/doctors" element={<Doctors />} />
@@ -31,6 +33,8 @@ const App = () => {
         <Route path="/drugs" element={<Drugs />} />
         <Route path="/drugs/:specialty" element={<Drugs />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/my-profile" element={<MyProfile />} />
@@ -39,8 +43,8 @@ const App = () => {
         <Route path="/my-appointments/:labId" element={<LabAppointment />} />
         <Route path="/my-appointments/:orderId" element={<DrugOrder />} />
       </Routes>
-      <Footer/>
-      <Chatbot/>
+      <Footer />
+      <Chatbot />
     </div>
   );
 };

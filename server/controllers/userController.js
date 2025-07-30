@@ -13,6 +13,7 @@ import tempFileModel from "../models/tempFileModel.js";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
 import { Readable } from "stream";
+import transporter from "../config/nodemailer.js";
 
 // Set FFmpeg path
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
@@ -83,9 +84,18 @@ const registerUser = async (req, res) => {
       return res.json({ success: false, message: "Enter Valid Birth Date" });
     }
 
+    // Check if user already exists
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return res.json({ success: false, message: "Email already registered" });
+    }
+
     // Hashing user password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Generate verification OTP
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
 
     const userData = {
       name,
@@ -98,15 +108,42 @@ const registerUser = async (req, res) => {
       birthDate,
       allergy: allergy || {},
       address: { line1: "", line2: "" },
+      isAccountVerified: false,
+      verifyOtp: otp,
+      verifyOtpExpireAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours expiry
     };
 
     const newUser = new userModel(userData);
-    const user = await newUser.save();
+    await newUser.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-    res.json({ success: true, token });
+    // Send OTP email
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      to: email,
+      subject: "Verify Your Kamma-Pharma Account",
+      text: `Hello ${name},\n\nThanks for registering.\n\nYour OTP is: ${otp}\n\nPlease verify your account within 24 hours.\n\n– Kamma-Pharma Team`,
+    };
+    await transporter.sendMail(mailOptions);
+
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
+    res.json({
+      success: true,
+      token,
+      message: "OTP sent to your email. Please verify your account.",
+    });
   } catch (error) {
-    console.log(error);
+    console.error("Error registering user:", error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// check Auth : /api/user/is-auth
+export const isAuth = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.user.id).select("-password");
+    return res.json({ success: true, user });
+  } catch (error) {
+    console.log(error.message);
     res.json({ success: false, message: error.message });
   }
 };
@@ -404,6 +441,11 @@ const loginUser = async (req, res) => {
     if (isMatch) {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
       res.json({ success: true, token });
+    } else if (!user.isAccountVerified) {
+      return res.json({
+        success: false,
+        message: `Please Check Your Mailbox ${email} to verify your account first before logging in`,
+      });
     } else {
       res.json({ success: false, message: "Invalid Credentials" });
     }
@@ -993,6 +1035,127 @@ const getDoctorsBySpecialty = async (req, res) => {
       .select("name specialty fees");
     res.json({ success: true, doctors });
   } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+export const sendVerifyOtp = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+    if (user.isAccountVerified) {
+      return res.json({ success: false, message: "Account Already Verified" });
+    }
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.verifyOtp = otp;
+    user.verifyOtpExpireAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours expiry
+    await user.save();
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      to: user.email,
+      subject: "Account Verification OTP",
+      text: `Hello ${user.name},\n\nYour OTP is: ${otp}\n\nVerify your account within 24 hours.\n\n– Kamma-Pharma Team`,
+    };
+    await transporter.sendMail(mailOptions);
+    return res.json({ success: true, message: "OTP sent to your email" });
+  } catch (error) {
+    console.error("Error sending verification OTP:", error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Verify Email
+export const verifyEmail = async (req, res) => {
+  const { userId, otp } = req.body;
+  if (!userId || !otp) {
+    return res.json({ success: false, message: "Missing Details" });
+  }
+  try {
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+    if (user.verifyOtp !== otp) {
+      return res.json({ success: false, message: "Invalid OTP" });
+    }
+    if (user.verifyOtpExpireAt < Date.now()) {
+      return res.json({ success: false, message: "OTP Expired" });
+    }
+    user.isAccountVerified = true;
+    user.verifyOtp = "";
+    user.verifyOtpExpireAt = 0;
+    await user.save();
+    return res.json({ success: true, message: "Email verified successfully" });
+  } catch (error) {
+    console.error("Error verifying email:", error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// reset password
+export const sendResetOtp = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.json({ success: false, message: "Email is required" });
+  }
+  try {
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.resetOtp = otp;
+    user.resetOtpExpireAt = Date.now() + 15 * 60 * 1000; // 15 minutes expiry
+    await user.save();
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      to: user.email,
+      subject: "Password Reset OTP",
+      text: `Hello ${user.name},\n\nYour OTP is: ${otp}\n\nReset your password within 15 minutes.\n\n– Kamma-Pharma Team`,
+    };
+    await transporter.sendMail(mailOptions);
+    return res.json({
+      success: true,
+      message: "OTP sent to your email",
+      userId: user._id,
+    });
+  } catch (error) {
+    console.error("Error sending reset OTP:", error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// reset user password
+export const resetPassword = async (req, res) => {
+  const { userId, otp, newPassword } = req.body;
+  if (!userId || !otp || !newPassword) {
+    return res.json({
+      success: false,
+      message: "User ID, OTP, and new password are required",
+    });
+  }
+  try {
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+    if (user.resetOtp !== otp) {
+      return res.json({ success: false, message: "Invalid OTP" });
+    }
+    if (user.resetOtpExpireAt < Date.now()) {
+      return res.json({ success: false, message: "OTP Expired" });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetOtp = "";
+    user.resetOtpExpireAt = 0;
+    await user.save();
+    return res.json({ success: true, message: "Password reset successfully" });
+  } catch (error) {
+    console.error("Error resetting password:", error);
     res.json({ success: false, message: error.message });
   }
 };
