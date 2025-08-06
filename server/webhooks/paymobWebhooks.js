@@ -6,6 +6,8 @@ export const paymobWebhook = async (req, res) => {
   try {
     const receivedHmac = req.query.hmac;
     const payload = req.body;
+
+    // Verify HMAC signature
     const secureHash = crypto
       .createHmac("sha512", process.env.PAYMOB_HMAC_SECRET)
       .update(JSON.stringify(payload))
@@ -18,13 +20,17 @@ export const paymobWebhook = async (req, res) => {
 
     const { obj } = req.body;
     const appointmentId = obj.order.merchant_order_id;
+    const transactionId = obj.id;
+    const amount = obj.amount_cents;
 
     // Determine if it's a doctor or lab appointment
     let appointment = await appointmentDoctorModel.findById(appointmentId);
     let isDoctorAppointment = true;
+
     if (!appointment) {
       appointment = await appointmentLabModel.findById(appointmentId);
       isDoctorAppointment = false;
+
       if (!appointment) {
         console.error("Appointment not found:", appointmentId);
         return res.status(404).send("Appointment not found");
@@ -36,14 +42,31 @@ export const paymobWebhook = async (req, res) => {
       : appointmentLabModel;
 
     if (obj.success) {
-      await model.findByIdAndUpdate(appointmentId, { payment: true });
+      // Payment successful
+      await model.findByIdAndUpdate(appointmentId, {
+        payment: true,
+        transactionId: transactionId,
+        paymentStatus: "completed",
+        paidAmount: amount / 100, // Convert from cents
+      });
+
+      console.log(
+        `Paymob payment successful for appointment: ${appointmentId}`
+      );
     } else {
-      await model.findByIdAndUpdate(appointmentId, { cancelled: true });
+      // Payment failed
+      await model.findByIdAndUpdate(appointmentId, {
+        cancelled: true,
+        transactionId: transactionId,
+        paymentStatus: "failed",
+      });
+
+      console.log(`Paymob payment failed for appointment: ${appointmentId}`);
     }
 
     res.status(200).send("OK");
   } catch (error) {
-    console.error("Webhook Error:", error);
+    console.error("Paymob Webhook Error:", error);
     res.status(400).send("Webhook Error");
   }
 };

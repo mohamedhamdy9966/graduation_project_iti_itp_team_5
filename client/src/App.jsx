@@ -18,6 +18,10 @@ import Chatbot from "./components/Chatbot";
 import VerifyEmail from "./components/VerifyEmail";
 import ResetPassword from "./components/ResetPassword";
 import DrugOrder from "./pages/DrugOrder";
+// Import payment pages
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
+import PaymentProcessing from "./pages/PaymentProcessing";
 
 const App = () => {
   return (
@@ -42,6 +46,9 @@ const App = () => {
         <Route path="/my-appointments/:docId" element={<DoctorAppointment />} />
         <Route path="/my-appointments/:labId" element={<LabAppointment />} />
         <Route path="/my-appointments/:orderId" element={<DrugOrder />} />
+        <Route path="/success" element={<PaymentSuccess />} />
+        <Route path="/cancel" element={<PaymentCancel />} />
+        <Route path="/processing" element={<PaymentProcessing />} />
       </Routes>
       <Footer />
       <Chatbot />

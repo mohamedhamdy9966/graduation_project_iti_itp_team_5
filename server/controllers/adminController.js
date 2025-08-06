@@ -66,11 +66,17 @@ const addLab = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Upload image to cloudinary
-    const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-      resource_type: "image",
-    });
-    const imageUrl = imageUpload.secure_url;
+    // Upload image to cloudinary or use default
+    let imageUrl = "https://via.placeholder.com/150"; // Default image URL
+    if (imageFile) {
+      const base64String = `data:${
+        imageFile.mimetype
+      };base64,${imageFile.buffer.toString("base64")}`;
+      const imageUpload = await cloudinary.uploader.upload(base64String, {
+        resource_type: "image",
+      });
+      imageUrl = imageUpload.secure_url;
+    }
 
     const labData = {
       name,
@@ -159,11 +165,17 @@ const addDoctor = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Upload image to cloudinary
-    const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-      resource_type: "image",
-    });
-    const imageUrl = imageUpload.secure_url;
+    // Upload image to cloudinary or use default
+    let imageUrl = "https://via.placeholder.com/150"; // Default image URL
+    if (imageFile) {
+      const base64String = `data:${
+        imageFile.mimetype
+      };base64,${imageFile.buffer.toString("base64")}`;
+      const imageUpload = await cloudinary.uploader.upload(base64String, {
+        resource_type: "image",
+      });
+      imageUrl = imageUpload.secure_url;
+    }
 
     const doctorData = {
       name,
@@ -349,6 +361,61 @@ const adminDashboard = async (req, res) => {
   }
 };
 
+const changeDoctorAvailability = async (req, res) => {
+  try {
+    const { docId } = req.body;
+
+    if (!docId) {
+      return res.json({ success: false, message: "Doctor ID is required" });
+    }
+
+    const docData = await doctorModel.findById(docId);
+    if (!docData) {
+      return res.json({ success: false, message: "Doctor not found" });
+    }
+
+    await doctorModel.findByIdAndUpdate(docId, {
+      available: !docData.available,
+    });
+
+    res.json({
+      success: true,
+      message: "Doctor availability changed successfully",
+    });
+  } catch (error) {
+    console.error("Error changing doctor availability:", error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+const changeLabAvailability = async (req, res) => {
+  try {
+    const { labId } = req.body;
+
+    if (!labId) {
+      return res.json({ success: false, message: "Lab ID is required" });
+    }
+
+    const labData = await labModel.findById(labId);
+    if (!labData) {
+      return res.json({ success: false, message: "Lab not found" });
+    }
+
+    await labModel.findByIdAndUpdate(labId, {
+      available: !labData.available,
+    });
+
+    res.json({
+      success: true,
+      message: "Lab availability changed successfully",
+    });
+  } catch (error) {
+    console.error("Error changing lab availability:", error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Export these functions along with your existing exports
 export {
   addDoctor,
   addLab,
@@ -358,4 +425,6 @@ export {
   appointmentsAdmin,
   appointmentCancel,
   adminDashboard,
+  changeDoctorAvailability, // Add this
+  changeLabAvailability, // Add this
 };
