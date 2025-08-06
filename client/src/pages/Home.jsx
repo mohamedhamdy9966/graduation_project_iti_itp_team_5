@@ -5,7 +5,7 @@ import DoctorSpecialty from '../components/DoctorSpecialty'
 
 const Home = () => {
   return (
-    <div className="space-y-60">
+    <div >
       <Header/>
       < DoctorSpecialty/>
       <TopDoctors/>

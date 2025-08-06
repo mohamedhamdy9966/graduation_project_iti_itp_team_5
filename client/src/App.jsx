@@ -19,7 +19,7 @@ import Chatbot from "./components/Chatbot";
 
 const App = () => {
   return (
-    <div className="mx-4 sm:mx-[10%] app-container">
+    <div >
       <ToastContainer/>
       <Navbar/>
       <Routes>
