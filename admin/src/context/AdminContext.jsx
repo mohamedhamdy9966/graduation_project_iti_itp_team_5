@@ -50,23 +50,27 @@ const AdminContextProvider = (props) => {
     }
   };
 
-  const changeDoctorAvailability = async (docId) => {
-    try {
-      const { data } = await axios.post(
-        backendUrl + "/api/admin/change-doctor-availability",
-        { docId },
-        { headers: { aToken } }
-      );
-      if (data.success) {
-        toast.success(data.message);
-        getAllDoctors();
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
+const changeDoctorAvailability = async (docId) => {
+  try {
+    if (!docId) {
+      throw new Error("Invalid doctor ID");
     }
-  };
+    const { data } = await axios.post(
+      backendUrl + "/api/admin/change-doctor-availability",
+      { docId },
+      { headers: { aToken } }
+    );
+    if (data.success) {
+      toast.success(data.message);
+      await getAllDoctors(); // Refresh the list
+    } else {
+      toast.error(data.message);
+    }
+  } catch (error) {
+    console.error("Error changing doctor availability:", error);
+    toast.error(error.message);
+  }
+};
 
   const changeLabAvailability = async (labId) => {
     try {
@@ -142,6 +146,7 @@ const AdminContextProvider = (props) => {
     setAToken,
     backendUrl,
     doctors,
+    labs,
     getAllDoctors,
     getAllLabs,
     changeDoctorAvailability,

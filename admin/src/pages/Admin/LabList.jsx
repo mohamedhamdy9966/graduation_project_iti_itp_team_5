@@ -19,7 +19,7 @@ const LabsList = () => {
               <img className='bg-indigo-50 group-hover:bg-blue-600 transition-all duration-500' src={item.image} alt='image'/>
               <div className='p-4'>
                 <p className='text-neutral-800 text-lg font-medium'>{item.name}</p>
-                <p className='text-zinc-600 text-sm'>{item.specialty}</p>
+                <p className='text-zinc-600 text-sm'>{item.services}</p>
                 <div className='mt-2 flex items-center gap-1 text-sm'>
                   <input onChange={()=> changeLabAvailability(item._id)} type='checkbox' checked={item.available}/>
                 <p>Available</p>

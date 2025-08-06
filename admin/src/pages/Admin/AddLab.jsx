@@ -7,7 +7,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 
 const AddLab = () => {
-  const { backendUrl, aToken } = useContext(AdminContext);
+  const { backendUrl, aToken, getAllLabs } = useContext(AdminContext);
 
   // Yup validation schema
   const validationSchema = Yup.object().shape({
@@ -32,7 +32,7 @@ const AddLab = () => {
     fees: Yup.number()
       .min(0, "Fees must be a positive number")
       .required("Fees is required"),
-    specialty: Yup.string().required("Specialty is required"),
+    services: Yup.array().required("services is required"),
     address1: Yup.string().required("Street address is required"),
     address2: Yup.string().required("City, State, ZIP is required"),
   });
@@ -46,7 +46,7 @@ const AddLab = () => {
     password: "",
     confirmPassword: "",
     fees: "",
-    specialty: "CBC",
+    services: [],
     address1: "",
     address2: "",
   };
@@ -62,7 +62,7 @@ const AddLab = () => {
       formData.append("password", values.password);
       formData.append("confirmPassword", values.confirmPassword);
       formData.append("fees", Number(values.fees));
-      formData.append("specialty", values.specialty);
+      formData.append("services", values.services);
       formData.append(
         "address",
         JSON.stringify({ line1: values.address1, line2: values.address2 })
@@ -76,6 +76,7 @@ const AddLab = () => {
       if (data.success) {
         toast.success(data.message);
         resetForm();
+        getAllLabs();
       } else {
         toast.error(data.message);
       }
@@ -252,11 +253,11 @@ const AddLab = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Specialty
+                    services
                   </label>
                   <Field
                     as="select"
-                    name="specialty"
+                    name="services"
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="CBC">CBC</option>
@@ -268,7 +269,7 @@ const AddLab = () => {
                     <option value="Bones">Bones</option>
                   </Field>
                   <ErrorMessage
-                    name="specialty"
+                    name="services"
                     component="div"
                     className="text-red-500 text-sm mt-1"
                   />

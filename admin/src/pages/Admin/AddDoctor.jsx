@@ -11,13 +11,12 @@ const AddDoctor = () => {
 
   // Yup validation schema
   const validationSchema = Yup.object().shape({
-    docImg: Yup.mixed()
-      .required("Image is required")
-      .test("fileType", "Only image files are allowed", (value) =>
-        value
-          ? ["image/jpeg", "image/png", "image/gif"].includes(value.type)
-          : false
-      ),
+    docImg: Yup.mixed().test(
+      "fileType",
+      "Only image files are allowed",
+      (value) =>
+        !value || ["image/jpeg", "image/png", "image/gif"].includes(value.type)
+    ),
     name: Yup.string().required("Doctor name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
     mobile: Yup.string()
@@ -61,7 +60,9 @@ const AddDoctor = () => {
   const onSubmitHandler = async (values, { setSubmitting, resetForm }) => {
     try {
       const formData = new FormData();
-      formData.append("image", values.docImg);
+      if (values.docImg) {
+        formData.append("image", values.docImg);
+      }
       formData.append("name", values.name);
       formData.append("email", values.email);
       formData.append("mobile", values.mobile);
@@ -126,7 +127,7 @@ const AddDoctor = () => {
                             className="w-12 h-12 mx-auto mb-2"
                           />
                           <p className="text-sm text-gray-500">
-                            Upload Doctor Picture
+                            Upload Doctor Picture (Optional)
                           </p>
                         </div>
                       )
