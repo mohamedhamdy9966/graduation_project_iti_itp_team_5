@@ -1,26 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
-@import "tailwindcss/preflight";
 @import "tailwindcss";
-@tailwind utilities;
 
+
+:root {
+  --color-primary: #00BCD4;
+  --color-primary-dark: #0097A7;
+  --color-primary-light: #B2EBF2;
+  --color-accent: #009688;
+  --color-text-primary: #212121;
+  --color-text-secondary: #757575;
+  --color-text-white: #FFFFFF;
+  --color-divider: #BDBDBD;
+ --main-font:  "Roboto", sans-serif;
+  --logo-font:  "Pangolin", cursive;
+}
 * {
-  font-family: 'Outfit', sans-serif !important;
+  font-family: var(--main-font);
 }
 
-.app-container {
-  font-family: 'Outfit', sans-serif;
-}
 
-.active hr {
-    @apply block
-}
 
-::-webkit-scrollbar {
-    @apply hidden
-}
-
-@media (max-width:740px) {
-    .active p {
-        @apply text-white bg-blue-500
-    }
-}

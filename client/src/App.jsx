@@ -21,9 +21,9 @@ import DrugOrder from "./pages/DrugOrder";
 
 const App = () => {
   return (
-    <div className="mx-4 sm:mx-[10%] app-container">
-      <ToastContainer />
-      <Navbar />
+    <div >
+      <ToastContainer/>
+      <Navbar/>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/doctors" element={<Doctors />} />
