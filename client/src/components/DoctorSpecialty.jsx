@@ -115,6 +115,7 @@ const DoctorSpecialty = () => {
               </Link>
             </motion.div>
           ))}
+        </div>
       </motion.div>
 
       {/* Decorative Elements */}
