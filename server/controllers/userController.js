@@ -14,6 +14,7 @@ import ffmpeg from "fluent-ffmpeg";
 import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
 import { Readable } from "stream";
 import transporter from "../config/nodemailer.js";
+import FormData from "form-data";
 
 // Set FFmpeg path
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
@@ -150,85 +151,136 @@ export const isAuth = async (req, res) => {
 
 const uploadAudio = async (req, res) => {
   try {
+    console.log("Upload audio endpoint hit");
+
     if (!req.file) {
+      console.log("No file received");
       return res
         .status(400)
         .json({ success: false, message: "No audio file uploaded." });
     }
 
-    // Validate audio duration
-    const duration = await getAudioDuration(req.file.buffer);
-    if (duration > 60) {
+    console.log("File received:", {
+      filename: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+    });
+
+    // Basic file size validation (5MB limit)
+    if (req.file.size > 5 * 1024 * 1024) {
       return res.status(400).json({
         success: false,
-        message: "Audio duration exceeds 60 seconds.",
+        message: "File size exceeds 5MB limit.",
       });
     }
 
     // Upload audio to Cloudinary
+    console.log("Uploading to Cloudinary...");
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
-          { resource_type: "video", folder: "roshetta/audio" },
+          {
+            resource_type: "video",
+            folder: "roshetta/audio",
+            timeout: 60000, // 60 second timeout
+          },
           (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
+            if (error) {
+              console.error("Cloudinary upload error:", error);
+              reject(error);
+            } else {
+              console.log("Cloudinary upload success:", result.secure_url);
+              resolve(result);
+            }
           }
         )
         .end(req.file.buffer);
     });
 
-    // Transcribe audio using Open AI Whisper API
-    const formData = new FormData();
-    formData.append("file", req.file.buffer, {
-      filename: req.file.originalname,
-    });
-    formData.append("model", "whisper-1");
+    // Transcribe audio using OpenAI Whisper API
+    console.log("Starting transcription...");
+    let transcription = "";
 
-    const transcriptionResponse = await axios.post(
-      "https://api.openai.com/v1/audio/transcriptions",
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
+    try {
+      const FormData = require("form-data");
+      const formData = new FormData();
 
-    const transcription = transcriptionResponse.data.text;
+      formData.append("file", req.file.buffer, {
+        filename: req.file.originalname || "audio.webm",
+        contentType: req.file.mimetype || "audio/webm",
+      });
+      formData.append("model", "whisper-1");
 
-    // Store metadata in MongoDB (for authenticated users only)
-    // Check if userId exists (from authUser middleware) or if this is a public upload
-    if (req.userId) {
-      await userModel.findByIdAndUpdate(req.userId, {
-        $push: {
-          uploadedFiles: {
-            type: "audio",
-            url: result.secure_url,
-            transcription,
-            createdAt: Date.now(),
+      const transcriptionResponse = await axios.post(
+        "https://api.openai.com/v1/audio/transcriptions",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            ...formData.getHeaders(),
           },
-        },
+          timeout: 30000,
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+        }
+      );
+
+      transcription = transcriptionResponse.data.text || "Transcription failed";
+      console.log(
+        "Transcription successful:",
+        transcription.substring(0, 100) + "..."
+      );
+    } catch (transcriptionError) {
+      console.error("Transcription error:", {
+        message: transcriptionError.message,
+        response: transcriptionError.response?.data,
+        status: transcriptionError.response?.status,
       });
-    } else {
-      // For public uploads, store in temporary collection
-      const tempFile = new tempFileModel({
-        type: "audio",
-        url: result.secure_url,
-        transcription,
-        createdAt: Date.now(),
-        sessionId: req.sessionID || "anonymous",
-      });
-      await tempFile.save();
+      transcription = "Transcription failed - audio uploaded successfully";
     }
 
-    res
-      .status(200)
-      .json({ success: true, transcription, fileUrl: result.secure_url });
+    // Store metadata in MongoDB
+    try {
+      if (req.userId) {
+        console.log("Saving to authenticated user:", req.userId);
+        await userModel.findByIdAndUpdate(req.userId, {
+          $push: {
+            uploadedFiles: {
+              type: "audio",
+              url: result.secure_url,
+              transcription,
+              createdAt: new Date(),
+            },
+          },
+        });
+      } else {
+        console.log("Saving to temp file collection");
+        const tempFile = new tempFileModel({
+          type: "audio",
+          url: result.secure_url,
+          transcription,
+          createdAt: new Date(),
+          sessionId: req.sessionID || "anonymous",
+        });
+        await tempFile.save();
+      }
+    } catch (dbError) {
+      console.error("Database save error:", dbError);
+      // Continue even if DB save fails
+    }
+
+    console.log("Upload audio completed successfully");
+    res.status(200).json({
+      success: true,
+      transcription,
+      fileUrl: result.secure_url,
+    });
   } catch (error) {
     console.error("Error uploading audio:", error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: `Upload failed: ${error.message}`,
+    });
   }
 };
 
