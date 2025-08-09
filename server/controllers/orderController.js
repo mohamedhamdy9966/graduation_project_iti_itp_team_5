@@ -1,7 +1,7 @@
 import Drug from "../models/Drug.js";
 import Order from "../models/Order.js";
 import stripe from "stripe";
-import User from "../models/User.js";
+import User from "../models/userModel.js";
 import axios from "axios";
 import crypto from "crypto";
 

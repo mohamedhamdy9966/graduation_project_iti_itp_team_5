@@ -1,18 +1,18 @@
 import express from "express";
-import { upload } from "../configs/multer.js";
+import upload  from "../middlewares/multer.js";
 import {
   addDrug,
   changeStock,
   drugById,
   drugList,
-} from "../controllers/productController.js";
+} from "../controllers/drugController.js";
 import authAdmin from "../middlewares/authAdmin.js";
 
 const DrugRouter = express.Router();
 
-productRouter.post("/add", upload.array("images", 4), authSeller, addDrug);
-productRouter.get("/list", drugList);
-productRouter.get("/id", drugById);
-productRouter.post("/stock", authAdmin, changeStock);
+DrugRouter.post("/add", upload.array("images", 4), authAdmin, addDrug);
+DrugRouter.get("/list", drugList);
+DrugRouter.get("/id", drugById);
+DrugRouter.post("/stock", authAdmin, changeStock);
 
 export default DrugRouter;
