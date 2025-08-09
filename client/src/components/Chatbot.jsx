@@ -77,29 +77,69 @@ const Chatbot = () => {
   };
 
   // Start audio recording
+  // Updated startRecording function
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100,
+        },
+      });
+
+      // Try different MIME types for better compatibility
+      const mimeTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/wav",
+        "audio/mp4",
+      ];
+
+      let selectedMimeType = "audio/webm";
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          break;
+        }
+      }
+
+      console.log("Using MIME type:", selectedMimeType);
+
+      mediaRecorderRef.current = new MediaRecorder(stream, {
+        mimeType: selectedMimeType,
+      });
+
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
+          type: selectedMimeType,
         });
+
+        console.log("Audio blob created:", {
+          size: audioBlob.size,
+          type: audioBlob.type,
+        });
+
         setAudioBlob(audioBlob);
+
+        // Stop all tracks to release the microphone
+        stream.getTracks().forEach((track) => track.stop());
       };
 
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.start(1000); // Collect data every second
       setIsRecording(true);
       toast.info("Recording started...");
     } catch (error) {
       console.error("Error starting recording:", error);
-      toast.error("Failed to access microphone.");
+      toast.error("Failed to access microphone: " + error.message);
     }
   };
 
@@ -171,6 +211,7 @@ const Chatbot = () => {
   };
 
   // Handle sending message
+  // Updated handleSendMessage function for better audio handling
   const handleSendMessage = async (event) => {
     event.preventDefault();
 
@@ -185,6 +226,7 @@ const Chatbot = () => {
 
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setInput("");
+    const currentAudioBlob = audioBlob; // Store reference before clearing
     setAudioBlob(null);
     setSelectedFile(null);
     setIsLoading(true);
@@ -192,54 +234,73 @@ const Chatbot = () => {
     try {
       let response;
 
-      if (audioBlob) {
+      if (currentAudioBlob) {
         // Handle audio upload and transcription
         const formData = new FormData();
-        formData.append("audio", audioBlob, "recording.webm");
+        formData.append("audio", currentAudioBlob, "recording.webm");
 
         const endpoint = token
           ? `${backendUrl}/api/user/upload-audio`
           : `${backendUrl}/api/user/upload-audio-public`;
+
+        console.log("Uploading audio to:", endpoint);
 
         const audioResponse = await axios.post(endpoint, formData, {
           headers: {
             ...(token ? { token } : {}),
             "Content-Type": "multipart/form-data",
           },
+          timeout: 90000, // 90 seconds for audio processing
         });
 
-        // Check if transcription was successful
-        if (audioResponse.data.success) {
-          // Successful transcription - proceed with chat
-          const chatData = {
-            message: audioResponse.data.transcription,
-            fileInfo: `Audio transcription: ${audioResponse.data.transcription}`,
-          };
+        console.log("Audio upload response:", audioResponse.data);
 
-          response = await axios.post(
-            `${backendUrl}/api/user/analyze-text`,
-            chatData,
-            {
-              headers: {
-                ...(token ? { token } : {}),
-                "Content-Type": "application/json",
-              },
-            }
-          );
+        // Check the response structure
+        if (audioResponse.data.success) {
+          // Check if transcription was successful
+          if (audioResponse.data.transcriptionSuccess) {
+            console.log(
+              "Transcription successful:",
+              audioResponse.data.transcription
+            );
+
+            // Successful transcription - proceed with chat
+            const chatData = {
+              message: audioResponse.data.transcription,
+              fileInfo: `Audio transcription: ${audioResponse.data.transcription}`,
+            };
+
+            response = await axios.post(
+              `${backendUrl}/api/user/analyze-text`,
+              chatData,
+              {
+                headers: {
+                  ...(token ? { token } : {}),
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          } else {
+            // Upload succeeded but transcription failed
+            console.log(
+              "Transcription failed:",
+              audioResponse.data.transcription
+            );
+
+            const errorMessage = {
+              sender: "bot",
+              text: `Audio uploaded successfully, but ${audioResponse.data.transcription}`,
+            };
+            setMessages((prevMessages) => [...prevMessages, errorMessage]);
+            setIsLoading(false);
+            return;
+          }
         } else {
-          // Transcription failed - show error to user and don't proceed with chat
-          const errorMessage = {
-            sender: "bot",
-            text:
-              audioResponse.data.message ||
-              "Audio transcription failed. Please try again or type your message.",
-          };
-          setMessages((prevMessages) => [...prevMessages, errorMessage]);
-          setIsLoading(false);
-          return; // Exit early, don't continue with chat processing
+          // Upload failed
+          throw new Error(audioResponse.data.message || "Audio upload failed");
         }
       } else if (selectedFile) {
-        // Handle file upload
+        // Handle file upload (existing code)
         const formData = new FormData();
         formData.append("file", selectedFile);
 
@@ -255,7 +316,6 @@ const Chatbot = () => {
         });
 
         if (fileResponse.data.success) {
-          // For PDF files, use the analysis if available
           let fileInfo = `Uploaded file: ${selectedFile.name} (${selectedFile.type})`;
           if (
             selectedFile.type === "application/pdf" &&
@@ -300,20 +360,38 @@ const Chatbot = () => {
         );
       }
 
-      if (response.data.success) {
+      // Handle the final response
+      if (response && response.data.success) {
         const botMessage = {
           sender: "bot",
           text: response.data.reply || "Response received.",
         };
         setMessages((prevMessages) => [...prevMessages, botMessage]);
-      } else {
-        throw new Error(response.data.message);
+      } else if (response) {
+        throw new Error(response.data.message || "Failed to get response");
       }
     } catch (error) {
       console.error("Error processing message:", error);
+
+      let errorText = "Sorry, something went wrong. Please try again.";
+
+      // Provide more specific error messages
+      if (error.code === "ECONNABORTED") {
+        errorText =
+          "Request timed out. Please try with a shorter audio recording or check your connection.";
+      } else if (error.response?.status === 413) {
+        errorText =
+          "File too large. Please try with a shorter audio recording.";
+      } else if (error.response?.status === 400) {
+        errorText =
+          "Invalid request. Please try recording again or type your message.";
+      } else if (error.message) {
+        errorText = `Error: ${error.message}`;
+      }
+
       const errorMessage = {
         sender: "bot",
-        text: `Sorry, something went wrong: ${error.message}. Please try again or contact support at ecommerce@kamma-pharma.com.`,
+        text: errorText,
       };
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {

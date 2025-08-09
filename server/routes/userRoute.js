@@ -151,4 +151,87 @@ userRouter.get("/debug-system-prompt", async (req, res) => {
   }
 });
 
+// Debug route - REMOVE IN PRODUCTION
+userRouter.get("/debug-openai", async (req, res) => {
+  try {
+    console.log("OpenAI API Key exists:", !!process.env.OPENAI_API_KEY);
+    console.log("API Key prefix:", process.env.OPENAI_API_KEY?.substring(0, 7));
+    
+    // Test basic OpenAI connection
+    const testResponse = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: "Hello" }],
+        max_tokens: 5
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+    
+    res.json({
+      success: true,
+      message: "OpenAI API connection successful",
+      response: testResponse.data
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      message: "OpenAI API connection failed",
+      error: error.response?.data || error.message
+    });
+  }
+});
+
+// Add to userRoute.js for testing
+userRouter.post("/test-audio", upload.single("audio"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.json({ success: false, message: "No file uploaded" });
+    }
+    
+    console.log("Test file:", {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
+    
+    const formData = new FormData();
+    formData.append("file", req.file.buffer, {
+      filename: "test.webm",
+      contentType: req.file.mimetype,
+    });
+    formData.append("model", "whisper-1");
+    
+    const response = await axios.post(
+      "https://api.openai.com/v1/audio/transcriptions",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          ...formData.getHeaders(),
+        },
+        timeout: 30000,
+      }
+    );
+    
+    res.json({
+      success: true,
+      transcription: response.data.text,
+      originalResponse: response.data
+    });
+    
+  } catch (error) {
+    console.error("Test error:", error.response?.data || error.message);
+    res.json({
+      success: false,
+      error: error.response?.data || error.message
+    });
+  }
+});
+
 export default userRouter;
