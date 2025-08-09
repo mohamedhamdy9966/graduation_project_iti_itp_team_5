@@ -46,7 +46,7 @@ const authApiLimiter = rateLimit({
 // Rate limiting for public upload endpoints
 const publicUploadLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 1, // Limit to 1 upload per minute per IP
+  max: 3, // More reasonable limit
   message: {
     success: false,
     message: "Too many uploads, please try again after a minute.",
