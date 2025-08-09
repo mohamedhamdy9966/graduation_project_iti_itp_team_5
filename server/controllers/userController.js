@@ -206,11 +206,13 @@ const uploadAudio = async (req, res) => {
       const FormData = require("form-data");
       const formData = new FormData();
 
+      // Fix: Ensure proper file handling for Whisper API
       formData.append("file", req.file.buffer, {
         filename: req.file.originalname || "audio.webm",
         contentType: req.file.mimetype || "audio/webm",
       });
       formData.append("model", "whisper-1");
+      formData.append("language", "en"); // Add language specification
 
       const transcriptionResponse = await axios.post(
         "https://api.openai.com/v1/audio/transcriptions",
@@ -220,24 +222,35 @@ const uploadAudio = async (req, res) => {
             Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
             ...formData.getHeaders(),
           },
-          timeout: 30000,
+          timeout: 60000, // Increase timeout to 60 seconds
           maxContentLength: Infinity,
           maxBodyLength: Infinity,
         }
       );
 
-      transcription = transcriptionResponse.data.text || "Transcription failed";
-      console.log(
-        "Transcription successful:",
-        transcription.substring(0, 100) + "..."
-      );
+      transcription = transcriptionResponse.data.text || "";
+      console.log("Transcription successful:", transcription);
+
+      // Don't proceed if transcription is empty
+      if (!transcription.trim()) {
+        transcription =
+          "Audio was uploaded but could not be transcribed. Please try again or type your message.";
+      }
     } catch (transcriptionError) {
       console.error("Transcription error:", {
         message: transcriptionError.message,
         response: transcriptionError.response?.data,
         status: transcriptionError.response?.status,
       });
-      transcription = "Transcription failed - audio uploaded successfully";
+
+      // Better error handling
+      if (transcriptionError.response?.status === 400) {
+        transcription =
+          "Audio format not supported. Please use a different audio format.";
+      } else {
+        transcription =
+          "Transcription failed. Please try again or type your message.";
+      }
     }
 
     // Store metadata in MongoDB
@@ -275,6 +288,9 @@ const uploadAudio = async (req, res) => {
       success: true,
       transcription,
       fileUrl: result.secure_url,
+      message: transcription.includes("failed")
+        ? transcription
+        : "Audio uploaded and transcribed successfully",
     });
   } catch (error) {
     console.error("Error uploading audio:", error);
@@ -482,99 +498,137 @@ const analyzePdfText = async (req, res) => {
 };
 
 const getSystemPrompt = async (fileInfo = "", user = null) => {
-  let prompt = `You are Roshetta Assistant, a helpful assistant for the Roshetta healthcare platform, which allows users to book appointments with doctors and labs in Egypt. The platform uses Egyptian Pounds (EGP) as currency. Provide accurate and concise answers related to healthcare, doctor appointments, lab bookings, or general queries. Users can send text, voice messages, or upload files (images or PDFs).`;
+  let prompt = `You are Roshetta Assistant, a helpful assistant for the Roshetta healthcare platform, which allows users to book appointments with doctors and labs in Egypt. The platform uses Egyptian Pounds (EGP) as currency. 
+
+You can help users with:
+- Booking appointments with doctors
+- Viewing their appointment history
+- Providing healthcare information
+- Analyzing uploaded medical files
+
+Important: When greeting users, always use their name if available. Be personal and friendly.`;
 
   if (user) {
-    prompt += `\nThe current user is ${user.name || "unknown"}, with email ${
-      user.email || "unknown"
-    }, blood type ${user.bloodType || "not specified"}, and medical insurance ${
-      user.medicalInsurance || "not specified"
-    }.`;
+    prompt += `\n\nCURRENT USER INFORMATION:
+- Name: ${user.name}
+- Email: ${user.email}
+- Blood Type: ${user.bloodType || "not specified"}
+- Medical Insurance: ${user.medicalInsurance || "not specified"}
+- Gender: ${user.gender || "not specified"}
+- Birth Date: ${user.birthDate || "not specified"}`;
 
     if (user.allergy && Object.keys(user.allergy).length > 0) {
-      prompt += `\nUser allergies: ${Object.entries(user.allergy)
+      prompt += `\n- Allergies: ${Object.entries(user.allergy)
         .map(([key, value]) => `${key}: ${value}`)
-        .join(", ")}.`;
+        .join(", ")}`;
     } else {
-      prompt += `\nUser has no recorded allergies.`;
+      prompt += `\n- Allergies: None recorded`;
+    }
+
+    if (user.address && (user.address.line1 || user.address.line2)) {
+      prompt += `\n- Address: ${user.address.line1 || ""} ${
+        user.address.line2 || ""
+      }`.trim();
+    }
+
+    // Get user's appointments
+    try {
+      const appointments = await appointmentDoctorModel
+        .find({ userId: user._id.toString() })
+        .populate("docData")
+        .sort({ date: -1 })
+        .limit(10);
+
+      if (appointments.length > 0) {
+        prompt += `\n\nUSER'S RECENT APPOINTMENTS:`;
+        appointments.forEach((apt, index) => {
+          const status = apt.cancelled
+            ? "Cancelled"
+            : apt.isCompleted
+            ? "Completed"
+            : apt.payment
+            ? "Paid/Scheduled"
+            : "Pending Payment";
+          prompt += `\n${index + 1}. Dr. ${apt.docData.name} (${
+            apt.docData.specialty
+          }) - ${apt.slotDate.replace(/_/g, "/")} at ${
+            apt.slotTime
+          } - Status: ${status} - Fee: ${apt.amount} EGP`;
+        });
+
+        prompt += `\n\nWhen user asks about appointments, show this information and explain the status of each.`;
+      } else {
+        prompt += `\n\nUSER'S APPOINTMENTS: No appointments found.`;
+      }
+    } catch (error) {
+      console.error("Error fetching user appointments for prompt:", error);
+      prompt += `\n\nUSER'S APPOINTMENTS: Unable to fetch appointment data.`;
     }
 
     if (user.uploadedFiles && user.uploadedFiles.length > 0) {
-      prompt += `\nThe user has previously uploaded the following files:\n${user.uploadedFiles
-        .map(
-          (file, index) =>
-            `${index + 1}. ${file.type} (Uploaded: ${new Date(
-              file.createdAt
-            ).toLocaleDateString()})${
-              file.transcription
-                ? `, Transcription: ${file.transcription.substring(0, 50)}...`
-                : ""
-            }`
-        )
-        .join("\n")}.`;
+      prompt += `\n\nUSER'S UPLOADED FILES:`;
+      user.uploadedFiles.forEach((file, index) => {
+        prompt += `\n${index + 1}. ${file.type} (${new Date(
+          file.createdAt
+        ).toLocaleDateString()})`;
+        if (file.transcription) {
+          prompt += ` - Audio transcription: "${file.transcription.substring(
+            0,
+            100
+          )}${file.transcription.length > 100 ? "..." : ""}"`;
+        }
+      });
     }
   } else {
-    prompt += `\nThis is an unauthenticated user. Do not assume any personal details unless provided in the message.`;
+    prompt += `\n\nThis is an unauthenticated user. Greet them politely and ask them to log in for personalized features like booking appointments or viewing appointment history.`;
   }
 
   if (fileInfo) {
-    prompt += `\nFile info: ${fileInfo}. Analyze it if relevant to the query.`;
+    prompt += `\n\nFILE CONTEXT: ${fileInfo}`;
   }
 
-  // Fetch and include available doctors and labs context
+  // Fetch and include available doctors
   try {
-    console.log("Fetching doctors and labs context...");
-
     const doctors = await doctorModel
       .find({ available: true })
       .select("name specialty fees")
-      .lean(); // Add .lean() for better performance
+      .lean();
 
-    // Make sure labModel is imported, or remove this section if you don't have labs
-    let labs = [];
+    if (doctors.length > 0) {
+      prompt += `\n\nAVAILABLE DOCTORS:`;
+      doctors.forEach((doc) => {
+        prompt += `\n- Dr. ${doc.name} (${doc.specialty}) - Consultation Fee: ${doc.fees} EGP`;
+      });
+    }
+
+    // Fetch labs if available
     try {
-      labs = await labModel
+      const labs = await labModel
         .find({ available: true })
         .select("name services")
         .lean();
+
+      if (labs.length > 0) {
+        prompt += `\n\nAVAILABLE LABS:`;
+        labs.forEach((lab) => {
+          prompt += `\n- ${lab.name} (Services: ${lab.services.join(", ")})`;
+        });
+      }
     } catch (labError) {
-      console.log(
-        "Lab model not available or no labs found:",
-        labError.message
-      );
+      console.log("Lab model not available:", labError.message);
     }
-
-    console.log(`Found ${doctors.length} doctors`);
-    console.log("Doctors:", doctors);
-
-    if (doctors.length > 0) {
-      prompt += `\n\nAvailable doctors on the platform:\n${doctors
-        .map(
-          (doc) =>
-            `- Dr. ${doc.name} (Specialty: ${doc.specialty}, Consultation Fee: ${doc.fees} EGP)`
-        )
-        .join("\n")}`;
-    }
-
-    if (labs.length > 0) {
-      prompt += `\n\nAvailable labs on the platform:\n${labs
-        .map((lab) => `- ${lab.name} (Services: ${lab.services.join(", ")})`)
-        .join("\n")}`;
-    }
-
-    // Add booking instructions
-    prompt += `\n\nFor appointment booking, users need to:
-1. Specify the doctor they want to see by name
-2. Provide their preferred date and time  
-3. Be logged in to complete the booking
-
-When asked about a specific doctor, provide their specialty and consultation fee from the list above. If you can't find a doctor with that exact name, suggest similar names from the available doctors list.`;
-
-    console.log("Final system prompt length:", prompt.length);
   } catch (error) {
-    console.error("Error fetching context data:", error);
-    prompt += `\n\nNote: Unable to fetch current doctor availability. Please contact support for the latest information.`;
+    console.error("Error fetching doctors for prompt:", error);
+    prompt += `\n\nNote: Unable to fetch current doctor availability.`;
   }
+
+  prompt += `\n\nIMPORTANT INSTRUCTIONS:
+- Always address the user by name when possible
+- When asked about appointments, provide detailed information about each appointment including status
+- For booking appointments, guide users through the process step by step
+- If user wants to book an appointment, ask for: doctor preference, date, and time
+- Always be helpful, professional, and empathetic
+- If you cannot perform an action directly, explain what the user needs to do`;
 
   return prompt;
 };
@@ -589,7 +643,7 @@ const getChatResponse = async (req, res) => {
 
     console.log("Processing chat message:", message);
 
-    // Optional: Fetch user if authenticated
+    // Fetch user if authenticated
     let user = null;
     const token = req.headers.token;
     if (token) {
@@ -602,9 +656,21 @@ const getChatResponse = async (req, res) => {
       }
     }
 
+    // Check if this is an appointment booking request
+    const isBookingRequest =
+      message.toLowerCase().includes("book") ||
+      message.toLowerCase().includes("appointment") ||
+      message.toLowerCase().includes("schedule");
+
     const systemPrompt = await getSystemPrompt(fileInfo, user);
 
     console.log("Calling OpenAI API...");
+
+    // Enhanced prompt for appointment booking
+    let enhancedMessage = message;
+    if (isBookingRequest && user) {
+      enhancedMessage += `\n\nNote: This user wants to book an appointment. If they specify a doctor, date, and time, you can guide them to complete the booking through the platform.`;
+    }
 
     // Call OpenAI API
     const response = await axios.post(
@@ -613,9 +679,9 @@ const getChatResponse = async (req, res) => {
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: message },
+          { role: "user", content: enhancedMessage },
         ],
-        max_tokens: 500,
+        max_tokens: 600,
         temperature: 0.7,
       },
       {
@@ -629,6 +695,20 @@ const getChatResponse = async (req, res) => {
     const botReply = response.data.choices[0].message.content.trim();
     console.log("OpenAI response received, length:", botReply.length);
 
+    // Check if user wants to book an appointment and extract details
+    if (user && isBookingRequest) {
+      const appointmentDetails = extractAppointmentDetails(message, botReply);
+      if (appointmentDetails) {
+        // Add booking instructions to the response
+        const bookingInstructions = `\n\nTo complete your appointment booking with ${appointmentDetails.doctor}, please visit the doctor's page on our platform or use the appointment booking section. You'll need to select your preferred time slot and confirm the booking.`;
+        return res.json({
+          success: true,
+          reply: botReply + bookingInstructions,
+          appointmentSuggestion: appointmentDetails,
+        });
+      }
+    }
+
     res.json({ success: true, reply: botReply });
   } catch (error) {
     console.error("Error getting chat response:", error);
@@ -637,6 +717,48 @@ const getChatResponse = async (req, res) => {
       message: "Failed to get response from AI. Please try again.",
     });
   }
+};
+
+// Helper function to extract appointment details from user message
+const extractAppointmentDetails = (userMessage, botResponse) => {
+  const message = userMessage.toLowerCase();
+
+  // Look for doctor names mentioned
+  const doctors = ["dr. nour", "nour", "dermatologist"];
+  let foundDoctor = null;
+
+  for (const doctor of doctors) {
+    if (message.includes(doctor)) {
+      foundDoctor = doctor;
+      break;
+    }
+  }
+
+  // Look for time patterns
+  const timePatterns = [
+    /(\d{1,2})\s*(pm|am)/i,
+    /(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i,
+    /next\s+(week|monday|tuesday|wednesday|thursday|friday)/i,
+  ];
+
+  let foundTime = null;
+  for (const pattern of timePatterns) {
+    const match = message.match(pattern);
+    if (match) {
+      foundTime = match[0];
+      break;
+    }
+  }
+
+  if (foundDoctor || foundTime) {
+    return {
+      doctor: foundDoctor,
+      timeRequest: foundTime,
+      fullMessage: userMessage,
+    };
+  }
+
+  return null;
 };
 
 // API to login user

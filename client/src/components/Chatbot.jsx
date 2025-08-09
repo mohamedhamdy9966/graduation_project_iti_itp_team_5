@@ -9,10 +9,17 @@ const Chatbot = () => {
   const { token, userData, doctors, backendUrl, chatbotContext } =
     useContext(AppContext);
   const [isOpen, setIsOpen] = useState(false);
+  const getInitialGreeting = () => {
+    if (userData && userData.name) {
+      return `Hello ${userData.name}! I'm Roshetta Assistant. How can I assist you with your healthcare needs today? You can ask about your appointments, book new appointments, or get medical advice. You can also type, record a voice message, or upload a file.`;
+    } else {
+      return "Hello! I'm Roshetta Assistant. How can I assist you with your healthcare needs today? You can type, record a voice message, or upload a file. Please log in to access personalized features like booking appointments or viewing your medical history.";
+    }
+  };
   const [messages, setMessages] = useState([
     {
       sender: "bot",
-      text: "Hello! I'm Roshetta Assistant. How can I assist you with your healthcare needs today? You can type, record a voice message, or upload a file.",
+      text: getInitialGreeting(),
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -310,6 +317,17 @@ const Chatbot = () => {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (messages.length === 1) {
+      setMessages([
+        {
+          sender: "bot",
+          text: getInitialGreeting(),
+        },
+      ]);
+    }
+  }, [userData]);
 
   // Fetch appointments and context on mount
   useEffect(() => {
