@@ -150,6 +150,7 @@ export const isAuth = async (req, res) => {
   }
 };
 
+// Fixed uploadAudio function with better error handling
 const uploadAudio = async (req, res) => {
   try {
     console.log("Upload audio endpoint hit");
@@ -201,18 +202,19 @@ const uploadAudio = async (req, res) => {
     // Transcribe audio using OpenAI Whisper API
     console.log("Starting transcription...");
     let transcription = "";
+    let transcriptionSuccess = false;
 
     try {
       const FormData = require("form-data");
       const formData = new FormData();
 
-      // Fix: Ensure proper file handling for Whisper API
+      // Ensure proper file handling for Whisper API
       formData.append("file", req.file.buffer, {
         filename: req.file.originalname || "audio.webm",
         contentType: req.file.mimetype || "audio/webm",
       });
       formData.append("model", "whisper-1");
-      formData.append("language", "en"); // Add language specification
+      formData.append("language", "en");
 
       const transcriptionResponse = await axios.post(
         "https://api.openai.com/v1/audio/transcriptions",
@@ -222,7 +224,7 @@ const uploadAudio = async (req, res) => {
             Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
             ...formData.getHeaders(),
           },
-          timeout: 60000, // Increase timeout to 60 seconds
+          timeout: 60000,
           maxContentLength: Infinity,
           maxBodyLength: Infinity,
         }
@@ -231,26 +233,49 @@ const uploadAudio = async (req, res) => {
       transcription = transcriptionResponse.data.text || "";
       console.log("Transcription successful:", transcription);
 
-      // Don't proceed if transcription is empty
+      // Check if transcription is meaningful
       if (!transcription.trim()) {
+        console.log("Empty transcription received");
         transcription =
           "Audio was uploaded but could not be transcribed. Please try again or type your message.";
+        transcriptionSuccess = false;
+      } else {
+        transcriptionSuccess = true;
       }
     } catch (transcriptionError) {
-      console.error("Transcription error:", {
+      console.error("Transcription error details:", {
         message: transcriptionError.message,
         response: transcriptionError.response?.data,
         status: transcriptionError.response?.status,
+        code: transcriptionError.code,
+        config: {
+          url: transcriptionError.config?.url,
+          method: transcriptionError.config?.method,
+          timeout: transcriptionError.config?.timeout,
+        },
       });
 
-      // Better error handling
-      if (transcriptionError.response?.status === 400) {
+      // More specific error handling
+      if (transcriptionError.code === "ECONNABORTED") {
+        transcription =
+          "Transcription timed out. Please try with a shorter audio file.";
+      } else if (transcriptionError.response?.status === 400) {
         transcription =
           "Audio format not supported. Please use a different audio format.";
+      } else if (transcriptionError.response?.status === 401) {
+        transcription = "Authentication failed. Please contact support.";
+        console.error(
+          "OpenAI API Key issue:",
+          process.env.OPENAI_API_KEY ? "Key exists" : "Key missing"
+        );
+      } else if (transcriptionError.response?.status === 413) {
+        transcription = "Audio file too large. Please use a smaller file.";
       } else {
         transcription =
           "Transcription failed. Please try again or type your message.";
       }
+
+      transcriptionSuccess = false;
     }
 
     // Store metadata in MongoDB
@@ -284,13 +309,17 @@ const uploadAudio = async (req, res) => {
     }
 
     console.log("Upload audio completed successfully");
+
+    // Return appropriate response based on transcription success
+    const responseMessage = transcriptionSuccess
+      ? "Audio uploaded and transcribed successfully"
+      : transcription; // transcription variable already contains error message
+
     res.status(200).json({
-      success: true,
+      success: transcriptionSuccess, // Only true if transcription actually worked
       transcription,
       fileUrl: result.secure_url,
-      message: transcription.includes("failed")
-        ? transcription
-        : "Audio uploaded and transcribed successfully",
+      message: responseMessage,
     });
   } catch (error) {
     console.error("Error uploading audio:", error);

@@ -208,8 +208,9 @@ const Chatbot = () => {
           },
         });
 
+        // Check if transcription was successful
         if (audioResponse.data.success) {
-          // Now send the transcription to the chat endpoint
+          // Successful transcription - proceed with chat
           const chatData = {
             message: audioResponse.data.transcription,
             fileInfo: `Audio transcription: ${audioResponse.data.transcription}`,
@@ -226,7 +227,16 @@ const Chatbot = () => {
             }
           );
         } else {
-          throw new Error(audioResponse.data.message);
+          // Transcription failed - show error to user and don't proceed with chat
+          const errorMessage = {
+            sender: "bot",
+            text:
+              audioResponse.data.message ||
+              "Audio transcription failed. Please try again or type your message.",
+          };
+          setMessages((prevMessages) => [...prevMessages, errorMessage]);
+          setIsLoading(false);
+          return; // Exit early, don't continue with chat processing
         }
       } else if (selectedFile) {
         // Handle file upload
