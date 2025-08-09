@@ -21,6 +21,7 @@ import {
   verifyEmail,
   sendResetOtp,
   resetPassword,
+  getChatResponse,
 } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
 import upload from "../middlewares/multer.js";
@@ -81,6 +82,7 @@ userRouter.post("/upload-audio-public", upload.single("audio"), uploadAudio);
 userRouter.post("/upload-file-public", upload.single("file"), uploadFile);
 userRouter.post("/analyze-image", authUser, analyzeImage);
 userRouter.post("/analyze-pdf", upload.single("file"), analyzePdfText);
+userRouter.post("/analyze-text", getChatResponse);
 userRouter.get("/doctors-by-specialty", getDoctorsBySpecialty);
 
 export default userRouter;

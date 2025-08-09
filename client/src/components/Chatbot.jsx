@@ -139,281 +139,228 @@ const Chatbot = () => {
               }`
           )
           .join("\n")}.`;
-      } else {
-        prompt += `\nThe user has no previously uploaded files.`;
       }
     } else {
-      prompt += `\nThe user is not logged in. Provide general assistance based on the Roshetta platform's context.`;
+      prompt += `\nThis is an unauthenticated user. Do not assume any personal details unless provided in the message.`;
     }
 
-    if (token && appointments.length > 0) {
-      prompt += `\nThe user has the following appointments:\n${appointments
-        .map(
-          (appt, index) =>
-            `${index + 1}. With ${
-              appt.docId
-                ? `Dr. ${appt.docData?.name || "Doctor"}`
-                : `Lab ${appt.labData?.name || "Lab"}`
-            } on ${appt.slotDate} at ${appt.slotTime} (Amount: ${
-              appt.amount
-            } EGP, Status: ${
-              appt.cancelled
-                ? "Cancelled"
-                : appt.isCompleted
-                ? "Completed"
-                : appt.payment
-                ? "Paid, Scheduled"
-                : "Pending Payment"
-            })`
-        )
-        .join("\n")}.`;
+    if (fileInfo) {
+      prompt += `\nFile info: ${fileInfo}. Analyze it if relevant to the query.`;
     }
 
-    if (chatbotContext.doctors.length > 0) {
-      prompt += `\nAvailable doctors include: ${chatbotContext.doctors
-        .map(
-          (doc) =>
-            `${doc.name} (Specialty: ${doc.specialty}, Fees: ${doc.fees} EGP)`
-        )
+    if (doctors.length > 0) {
+      prompt += `\nAvailable doctors: ${doctors
+        .map((doc) => `${doc.name} (${doc.specialty}, Fees: ${doc.fees} EGP)`)
         .join(", ")}.`;
     }
 
-    if (chatbotContext.labs.length > 0) {
-      prompt += `\nAvailable labs include: ${chatbotContext.labs
+    if (chatbotContext.labs && chatbotContext.labs.length > 0) {
+      prompt += `\nAvailable labs: ${chatbotContext.labs
         .map((lab) => `${lab.name} (Services: ${lab.services.join(", ")})`)
         .join(", ")}.`;
     }
 
-    if (fileInfo) {
-      prompt += `\nThe user has uploaded: ${fileInfo}. Analyze or summarize the content if relevant to the query.`;
-    }
-
-    prompt += `\nFor queries about booking appointments, checking availability, or user-specific details, provide answers based on the provided data. For general health questions, use your knowledge to give accurate advice. If unsure, suggest contacting support at ecommerce@kamma-pharma.com.`;
     return prompt;
   };
 
-  // Handle sending message (text, audio, or file)
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
+  // Handle sending message
+  const handleSendMessage = async (event) => {
+    event.preventDefault();
+
     if (!validateInput()) return;
 
+    const userMessage = {
+      sender: "user",
+      text: input.trim(),
+      ...(audioBlob ? { audio: URL.createObjectURL(audioBlob) } : {}),
+      ...(selectedFile ? { file: selectedFile.name } : {}),
+    };
+
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setInput("");
+    setAudioBlob(null);
+    setSelectedFile(null);
     setIsLoading(true);
 
-    if (!token && (audioBlob || selectedFile)) {
-      toast.info(
-        "Files uploaded as an unauthenticated user will be deleted after 24 hours."
-      );
-    }
-
     try {
-      let userMessageText = input;
-      let fileInfo = "";
+      let response;
 
-      // Handle audio upload and transcription
       if (audioBlob) {
+        // Handle audio upload and transcription
         const formData = new FormData();
         formData.append("audio", audioBlob, "recording.webm");
-        const uploadUrl = token
+
+        const endpoint = token
           ? `${backendUrl}/api/user/upload-audio`
           : `${backendUrl}/api/user/upload-audio-public`;
-        const { data } = await axios.post(uploadUrl, formData, {
-          headers: { token, "Content-Type": "multipart/form-data" },
-        });
-        if (data.success) {
-          userMessageText = data.transcription;
-          setMessages((prev) => [
-            ...prev,
-            { sender: "user", text: userMessageText },
-          ]);
-          setAudioBlob(null);
-          toast.success("Audio transcribed successfully.");
-        } else {
-          throw new Error(data.message);
-        }
-      }
 
-      // Handle file upload and analysis
-      if (selectedFile) {
+        const audioResponse = await axios.post(endpoint, formData, {
+          headers: {
+            ...(token ? { token } : {}),
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        if (audioResponse.data.success) {
+          // Now send the transcription to the chat endpoint
+          const chatData = {
+            message: audioResponse.data.transcription,
+            fileInfo: `Audio transcription: ${audioResponse.data.transcription}`,
+          };
+
+          response = await axios.post(
+            `${backendUrl}/api/user/analyze-text`,
+            chatData,
+            {
+              headers: {
+                ...(token ? { token } : {}),
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        } else {
+          throw new Error(audioResponse.data.message);
+        }
+      } else if (selectedFile) {
+        // Handle file upload
         const formData = new FormData();
         formData.append("file", selectedFile);
-        const uploadUrl = token
+
+        const endpoint = token
           ? `${backendUrl}/api/user/upload-file`
           : `${backendUrl}/api/user/upload-file-public`;
-        const { data } = await axios.post(uploadUrl, formData, {
-          headers: { token, "Content-Type": "multipart/form-data" },
-        });
-        if (data.success) {
-          fileInfo = `${selectedFile.name} (${selectedFile.type}) stored at ${data.fileUrl}`;
-          setMessages((prev) => [
-            ...prev,
-            {
-              sender: "user",
-              text: `Uploaded file: ${selectedFile.name}`,
-            },
-          ]);
 
-          if (selectedFile.type.startsWith("image/")) {
-            const { data: analysisData } = await axios.post(
-              `${backendUrl}/api/user/analyze-image`,
-              { imageUrl: data.fileUrl },
-              { headers: { token } }
-            );
-            if (analysisData.success) {
-              fileInfo += `\nPrescription Analysis: ${analysisData.analysis}`;
-            } else {
-              throw new Error(analysisData.message);
-            }
-          } else if (selectedFile.type === "application/pdf") {
-            const { data: pdfData } = await axios.post(
-              `${backendUrl}/api/user/analyze-pdf`,
-              formData,
-              { headers: { token, "Content-Type": "multipart/form-data" } }
-            );
-            if (pdfData.success) {
-              fileInfo += `\nPDF Text: ${pdfData.text}\nPrescription Analysis: ${pdfData.analysis}`;
-            } else {
-              throw new Error(pdfData.message);
-            }
+        const fileResponse = await axios.post(endpoint, formData, {
+          headers: {
+            ...(token ? { token } : {}),
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        if (fileResponse.data.success) {
+          // For PDF files, use the analysis if available
+          let fileInfo = `Uploaded file: ${selectedFile.name} (${selectedFile.type})`;
+          if (
+            selectedFile.type === "application/pdf" &&
+            fileResponse.data.analysis
+          ) {
+            fileInfo += `. Analysis: ${fileResponse.data.analysis}`;
           }
 
-          setSelectedFile(null);
-          toast.success("File uploaded and analyzed successfully.");
+          const chatData = {
+            message: input.trim() || "Please analyze this file.",
+            fileInfo: fileInfo,
+          };
+
+          response = await axios.post(
+            `${backendUrl}/api/user/analyze-text`,
+            chatData,
+            {
+              headers: {
+                ...(token ? { token } : {}),
+                "Content-Type": "application/json",
+              },
+            }
+          );
         } else {
-          throw new Error(data.message);
+          throw new Error(fileResponse.data.message);
         }
-      }
+      } else {
+        // Handle text-only message
+        const chatData = {
+          message: input.trim(),
+        };
 
-      if (userMessageText) {
-        setMessages((prev) => [
-          ...prev,
-          { sender: "user", text: userMessageText },
-        ]);
-        setInput("");
-      }
-
-      const specialties = chatbotContext.doctors.map((doc) =>
-        doc.specialty.toLowerCase()
-      );
-      const matchedSpecialty = specialties.find((specialty) =>
-        userMessageText.toLowerCase().includes(specialty)
-      );
-      if (matchedSpecialty) {
-        const { data } = await axios.get(
-          `${backendUrl}/api/user/doctors-by-specialty?specialty=${matchedSpecialty}`
+        response = await axios.post(
+          `${backendUrl}/api/user/analyze-text`,
+          chatData,
+          {
+            headers: {
+              ...(token ? { token } : {}),
+              "Content-Type": "application/json",
+            },
+          }
         );
-        if (data.success) {
-          fileInfo += `\nAvailable ${matchedSpecialty} doctors: ${data.doctors
-            .map((doc) => `${doc.name} (Fees: ${doc.fees} EGP)`)
-            .join(", ")}.`;
-        }
       }
-
-      const response = await axios.post(
-        `${backendUrl}/api/user/analyze-text`,
-        {
-          prompt: getSystemPrompt(fileInfo),
-          userMessage: userMessageText || `User uploaded file: ${fileInfo}`,
-        },
-        {
-          headers: { token, "Content-Type": "application/json" },
-        }
-      );
 
       if (response.data.success) {
-        setMessages((prev) => [
-          ...prev,
-          { sender: "bot", text: response.data.response },
-        ]);
+        const botMessage = {
+          sender: "bot",
+          text: response.data.reply || "Response received.",
+        };
+        setMessages((prevMessages) => [...prevMessages, botMessage]);
       } else {
         throw new Error(response.data.message);
       }
     } catch (error) {
       console.error("Error processing message:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "bot",
-          text: `Sorry, something went wrong: ${error.message}. Please try again or contact support at ecommerce@kamma-pharma.com.`,
-        },
-      ]);
+      const errorMessage = {
+        sender: "bot",
+        text: `Sorry, something went wrong: ${error.message}. Please try again or contact support at ecommerce@kamma-pharma.com.`,
+      };
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Scroll to bottom on new messages
   useEffect(() => {
-    if (token) {
-      fetchAppointments();
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [token]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Fetch appointments and context on mount
+  useEffect(() => {
+    fetchAppointments();
+  }, [token, userData]);
+
   return (
-    <div className="fixed bottom-6 right-6 z-[60]">
+    <div className="fixed bottom-4 right-4 z-50">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`p-4 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-full shadow-xl hover:shadow-2xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:ring-opacity-50 transition-all duration-300 transform hover:scale-105 ${
-          isOpen ? "rotate-0" : "rotate-0"
-        }`}
+        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-full shadow-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 flex items-center space-x-2"
       >
-        <div className="relative">
-          <img
-            src={assets.roshettaLogo || "https://via.placeholder.com/24"}
-            alt="Chat"
-            className="w-10 h-10"
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
           />
-          {!isOpen && (
-            <div className="absolute -top-1 -right-1 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-              <span className="text-white text-xs">!</span>
-            </div>
-          )}
-        </div>
+        </svg>
+        <span>Chat</span>
       </button>
-
       {isOpen && (
-        <div className="fixed bottom-24 right-0 md:right-6 w-full md:w-96 h-[70vh] md:h-[600px] bg-white border border-gray-200 shadow-2xl rounded-t-2xl rounded-bl-2xl flex flex-col transition-all duration-300 overflow-hidden">
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <img
-                  src={assets.logo || "https://via.placeholder.com/24"}
-                  alt="Assistant"
-                  className="w-10 h-10 rounded-full border-2 border-white"
-                />
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></span>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">
-                  Roshetta Assistant
-                </h3>
-                <p className="text-xs text-indigo-100">Online</p>
-              </div>
-            </div>
+        <div className="mt-2 bg-white rounded-2xl shadow-2xl w-96 h-[32rem] flex flex-col overflow-hidden border border-indigo-100 transition-all duration-300">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 flex justify-between items-center">
+            <h2 className="text-lg font-semibold">Roshetta Assistant</h2>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 rounded-full text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-white transition-all duration-200"
+              className="text-white hover:text-gray-200 focus:outline-none"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
               >
                 <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
                 />
               </svg>
             </button>
           </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-indigo-50 to-white">
+          <div className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-4">
             {messages.map((msg, index) => (
               <div
                 key={index}
@@ -422,41 +369,32 @@ const Chatbot = () => {
                 }`}
               >
                 <div
-                  className={`max-w-[85%] p-4 rounded-2xl ${
+                  className={`max-w-[80%] p-3 rounded-2xl shadow-md ${
                     msg.sender === "user"
-                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-br-none"
-                      : "bg-white text-gray-800 shadow-md rounded-bl-none"
+                      ? "bg-indigo-100 text-indigo-900"
+                      : "bg-white text-gray-800"
                   }`}
                 >
-                  <p className="text-sm md:text-base">{msg.text}</p>
-                  <div className="text-right mt-1">
-                    <span className="text-xs opacity-70">
-                      {new Date().toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
+                  {msg.text && <p>{msg.text}</p>}
+                  {msg.audio && (
+                    <audio controls src={msg.audio} className="w-full mt-2" />
+                  )}
+                  {msg.file && <p className="mt-2">File: {msg.file}</p>}
                 </div>
               </div>
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="max-w-[70%] p-4 rounded-2xl bg-white shadow-md rounded-bl-none">
-                  <div className="flex space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></div>
-                    <div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce delay-100"></div>
-                    <div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce delay-200"></div>
-                  </div>
+                <div className="bg-white p-3 rounded-2xl shadow-md">
+                  <p className="text-gray-500">Thinking...</p>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
-
           <form
             onSubmit={handleSendMessage}
-            className="p-4 border-t border-gray-200 bg-white rounded-b-2xl"
+            className="p-4 bg-white border-t border-indigo-100"
           >
             <div className="flex flex-col gap-3">
               <div className="flex gap-2">
@@ -465,13 +403,13 @@ const Chatbot = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type your message..."
-                  className="flex-1 p-3 border border-gray-300 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                  disabled={isLoading}
+                  className="flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200 disabled:opacity-50"
+                  disabled={isLoading || isRecording}
                 />
                 <button
                   type="submit"
-                  className="p-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 disabled:opacity-50 flex items-center justify-center"
-                  disabled={isLoading}
+                  className="p-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 disabled:opacity-50 flex items-center"
+                  disabled={isLoading || isRecording}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

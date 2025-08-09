@@ -127,25 +127,25 @@ const AppContextProvider = (props) => {
     }
   };
 
-  useEffect(() => {
-    const updateCart = async () => {
-      try {
-        const token = localStorage.getItem("userToken");
-        if (!token || !user) return;
+  // useEffect(() => {
+  //   const updateCart = async () => {
+  //     try {
+  //       const token = localStorage.getItem("userToken");
+  //       if (!token || !user) return;
 
-        await axios.patch(
-          "/api/cart/update",
-          { cartItems },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } catch (error) {
-        toast.error(error.message);
-      }
-    };
-    if (user) {
-      updateCart();
-    }
-  }, [cartItems]);
+  //       await axios.patch(
+  //         "/api/cart/update",
+  //         { cartItems },
+  //         { headers: { Authorization: `Bearer ${token}` } }
+  //       );
+  //     } catch (error) {
+  //       toast.error(error.message);
+  //     }
+  //   };
+  //   if (user) {
+  //     updateCart();
+  //   }
+  // }, [cartItems]);
 
   const value = {
     doctors,

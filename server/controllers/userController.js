@@ -427,6 +427,83 @@ const analyzePdfText = async (req, res) => {
   }
 };
 
+// Helper to build the system prompt (already in your Chatbot.jsx, but moved to backend for consistency)
+const getSystemPrompt = (fileInfo = "", user = null) => {
+  let prompt = `You are Roshetta Assistant, a helpful assistant for the Roshetta healthcare platform, which allows users to book appointments with doctors and labs in Egypt. The platform uses Egyptian Pounds (EGP) as currency. Provide accurate and concise answers related to healthcare, doctor appointments, lab bookings, or general queries. Users can send text, voice messages, or upload files (images or PDFs).`;
+
+  if (user) {
+    prompt += `\nThe current user is ${user.name || "unknown"}, with email ${user.email || "unknown"}, blood type ${user.bloodType || "not specified"}, and medical insurance ${user.medicalInsurance || "not specified"}.`;
+
+    if (user.allergy && Object.keys(user.allergy).length > 0) {
+      prompt += `\nUser allergies: ${Object.entries(user.allergy).map(([key, value]) => `${key}: ${value}`).join(", ")}.`;
+    } else {
+      prompt += `\nUser has no recorded allergies.`;
+    }
+
+    if (user.uploadedFiles && user.uploadedFiles.length > 0) {
+      prompt += `\nThe user has previously uploaded the following files:\n${user.uploadedFiles.map((file, index) => `${index + 1}. ${file.type} (Uploaded: ${new Date(file.createdAt).toLocaleDateString()})${file.transcription ? `, Transcription: ${file.transcription.substring(0, 50)}...` : ""}`).join("\n")}.`;
+    }
+  } else {
+    prompt += `\nThis is an unauthenticated user. Do not assume any personal details unless provided in the message.`;
+  }
+
+  if (fileInfo) {
+    prompt += `\nFile info: ${fileInfo}. Analyze it if relevant to the query.`;
+  }
+
+  // Append available doctors/labs from context (fetch dynamically if needed)
+  // You can integrate chatbotContext here if stored globally or fetched
+
+  return prompt;
+};
+
+// API to get chat response from OpenAI
+const getChatResponse = async (req, res) => {
+  try {
+    const { message, fileInfo } = req.body; // 'message' is the user's text input
+    if (!message) {
+      return res.json({ success: false, message: "Message is required" });
+    }
+
+    // Optional: Fetch user if authenticated (no auth middleware needed)
+    let user = null;
+    const token = req.headers.token;
+    if (token) {
+      const token_decode = jwt.verify(token, process.env.JWT_SECRET);
+      user = await userModel.findById(token_decode.id).select("-password");
+    }
+
+    const systemPrompt = getSystemPrompt(fileInfo, user);
+
+    // Call OpenAI API (gpt-4o-mini or whichever model you prefer)
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message },
+        ],
+        max_tokens: 500, // Adjust as needed for response length
+        temperature: 0.7, // For balanced creativity
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const botReply = response.data.choices[0].message.content.trim();
+
+    res.json({ success: true, reply: botReply });
+  } catch (error) {
+    console.error("Error getting chat response:", error);
+    res.json({ success: false, message: "Failed to get response from AI. Please try again." });
+  }
+};
+
 // API to login user
 const loginUser = async (req, res) => {
   try {
@@ -799,7 +876,6 @@ const payAppointmentPaymob = async (req, res) => {
   }
 };
 
-// API to pay for appointment with Stripe
 // API to pay for appointment with Stripe
 const payAppointmentStripe = async (req, res) => {
   try {
@@ -1193,4 +1269,5 @@ export {
   analyzeImage,
   analyzePdfText,
   getDoctorsBySpecialty,
+  getChatResponse,
 };
