@@ -93,4 +93,62 @@ userRouter.post("/analyze-pdf", upload.single("file"), analyzePdfText);
 userRouter.post("/analyze-text", getChatResponse);
 userRouter.get("/doctors-by-specialty", getDoctorsBySpecialty);
 
+userRouter.get("/debug-doctors", async (req, res) => {
+  try {
+    console.log("=== DEBUGGING DOCTORS ===");
+
+    // Check all doctors
+    const allDoctors = await doctorModel
+      .find({})
+      .select("name specialty fees available");
+    console.log("All doctors in database:", allDoctors);
+
+    // Check available doctors
+    const availableDoctors = await doctorModel
+      .find({ available: true })
+      .select("name specialty fees");
+    console.log("Available doctors:", availableDoctors);
+
+    // Look for Dr. Nour specifically
+    const drNour = await doctorModel
+      .find({
+        name: { $regex: /nour/i },
+      })
+      .select("name specialty fees available");
+    console.log("Doctors with 'Nour' in name:", drNour);
+
+    res.json({
+      success: true,
+      allDoctors: allDoctors.length,
+      availableDoctors: availableDoctors.length,
+      drNourResults: drNour,
+      data: {
+        all: allDoctors,
+        available: availableDoctors,
+        nour: drNour,
+      },
+    });
+  } catch (error) {
+    console.error("Debug error:", error);
+    res.json({ success: false, message: error.message });
+  }
+});
+
+// Also add this to test the system prompt generation
+userRouter.get("/debug-system-prompt", async (req, res) => {
+  try {
+    const systemPrompt = await getSystemPrompt("", null);
+    console.log("Generated system prompt:", systemPrompt);
+
+    res.json({
+      success: true,
+      promptLength: systemPrompt.length,
+      prompt: systemPrompt,
+    });
+  } catch (error) {
+    console.error("System prompt debug error:", error);
+    res.json({ success: false, message: error.message });
+  }
+});
+
 export default userRouter;

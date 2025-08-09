@@ -15,6 +15,7 @@ import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
 import { Readable } from "stream";
 import transporter from "../config/nodemailer.js";
 import FormData from "form-data";
+import labModel from "../models/labModel.js";
 
 // Set FFmpeg path
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
@@ -522,66 +523,90 @@ const getSystemPrompt = async (fileInfo = "", user = null) => {
 
   // Fetch and include available doctors and labs context
   try {
+    console.log("Fetching doctors and labs context...");
+
     const doctors = await doctorModel
       .find({ available: true })
-      .select("name specialty fees");
+      .select("name specialty fees")
+      .lean(); // Add .lean() for better performance
 
-    const labs = await labModel
-      .find({ available: true })
-      .select("name services");
+    // Make sure labModel is imported, or remove this section if you don't have labs
+    let labs = [];
+    try {
+      labs = await labModel
+        .find({ available: true })
+        .select("name services")
+        .lean();
+    } catch (labError) {
+      console.log(
+        "Lab model not available or no labs found:",
+        labError.message
+      );
+    }
+
+    console.log(`Found ${doctors.length} doctors`);
+    console.log("Doctors:", doctors);
 
     if (doctors.length > 0) {
-      prompt += `\nAvailable doctors on the platform:\n${doctors
+      prompt += `\n\nAvailable doctors on the platform:\n${doctors
         .map(
           (doc) =>
-            `- Dr. ${doc.name} (${doc.specialty}, Consultation Fee: ${doc.fees} EGP)`
+            `- Dr. ${doc.name} (Specialty: ${doc.specialty}, Consultation Fee: ${doc.fees} EGP)`
         )
-        .join("\n")}.`;
+        .join("\n")}`;
     }
 
     if (labs.length > 0) {
-      prompt += `\nAvailable labs on the platform:\n${labs
+      prompt += `\n\nAvailable labs on the platform:\n${labs
         .map((lab) => `- ${lab.name} (Services: ${lab.services.join(", ")})`)
-        .join("\n")}.`;
+        .join("\n")}`;
     }
 
     // Add booking instructions
     prompt += `\n\nFor appointment booking, users need to:
-1. Specify the doctor they want to see
-2. Provide their preferred date and time
+1. Specify the doctor they want to see by name
+2. Provide their preferred date and time  
 3. Be logged in to complete the booking
-If a user wants to book with a specific doctor, help them identify the exact doctor name from the available list and guide them through the process.`;
+
+When asked about a specific doctor, provide their specialty and consultation fee from the list above. If you can't find a doctor with that exact name, suggest similar names from the available doctors list.`;
+
+    console.log("Final system prompt length:", prompt.length);
   } catch (error) {
     console.error("Error fetching context data:", error);
+    prompt += `\n\nNote: Unable to fetch current doctor availability. Please contact support for the latest information.`;
   }
 
   return prompt;
 };
 
-// API to get chat response from OpenAI
+// Enhanced getChatResponse function
 const getChatResponse = async (req, res) => {
   try {
-    const { message, fileInfo } = req.body; // 'message' is the user's text input
+    const { message, fileInfo } = req.body;
     if (!message) {
       return res.json({ success: false, message: "Message is required" });
     }
 
-    // Optional: Fetch user if authenticated (no auth middleware needed)
+    console.log("Processing chat message:", message);
+
+    // Optional: Fetch user if authenticated
     let user = null;
     const token = req.headers.token;
     if (token) {
       try {
         const token_decode = jwt.verify(token, process.env.JWT_SECRET);
         user = await userModel.findById(token_decode.id).select("-password");
+        console.log("Authenticated user:", user?.name);
       } catch (error) {
         console.log("Token verification failed:", error.message);
-        // Continue without user context
       }
     }
 
     const systemPrompt = await getSystemPrompt(fileInfo, user);
 
-    // Call OpenAI API (gpt-4o-mini or whichever model you prefer)
+    console.log("Calling OpenAI API...");
+
+    // Call OpenAI API
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -590,8 +615,8 @@ const getChatResponse = async (req, res) => {
           { role: "system", content: systemPrompt },
           { role: "user", content: message },
         ],
-        max_tokens: 500, // Adjust as needed for response length
-        temperature: 0.7, // For balanced creativity
+        max_tokens: 500,
+        temperature: 0.7,
       },
       {
         headers: {
@@ -602,6 +627,7 @@ const getChatResponse = async (req, res) => {
     );
 
     const botReply = response.data.choices[0].message.content.trim();
+    console.log("OpenAI response received, length:", botReply.length);
 
     res.json({ success: true, reply: botReply });
   } catch (error) {
