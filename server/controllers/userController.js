@@ -169,7 +169,6 @@ const uploadAudio = async (req, res) => {
       fieldname: req.file.fieldname,
     });
 
-    // Basic file size validation (10MB limit - increased for better compatibility)
     if (req.file.size > 10 * 1024 * 1024) {
       return res.status(400).json({
         success: false,
@@ -177,7 +176,6 @@ const uploadAudio = async (req, res) => {
       });
     }
 
-    // Validate file type
     const allowedMimeTypes = [
       "audio/webm",
       "audio/wav",
@@ -195,16 +193,15 @@ const uploadAudio = async (req, res) => {
       });
     }
 
-    // Upload audio to Cloudinary first
     console.log("Uploading to Cloudinary...");
     const cloudinaryResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
           {
-            resource_type: "video", // Use "video" for audio files in Cloudinary
+            resource_type: "video",
             folder: "roshetta/audio",
             timeout: 60000,
-            format: "webm", // Ensure consistent format
+            format: "webm",
           },
           (error, result) => {
             if (error) {
@@ -219,133 +216,101 @@ const uploadAudio = async (req, res) => {
         .end(req.file.buffer);
     });
 
-    // Transcribe audio using OpenAI Whisper API
+    // === Whisper transcription with exponential backoff retry ===
     console.log("Starting transcription...");
     let transcription = "";
     let transcriptionSuccess = false;
 
-    try {
-      // Import FormData at the top of the file if not already imported
-      const formData = new FormData();
+    const transcribeWithRetry = async (
+      maxRetries = 3,
+      initialDelayMs = 5000
+    ) => {
+      let attempt = 0;
+      let delay = initialDelayMs;
 
-      // Create a proper file-like object for the FormData
-      const audioBuffer = req.file.buffer;
-      const fileName = req.file.originalname || "audio.webm";
-      const mimeType = req.file.mimetype || "audio/webm";
+      while (attempt < maxRetries) {
+        try {
+          attempt++;
+          console.log(`Whisper transcription attempt ${attempt}...`);
 
-      // Append the audio buffer as a blob-like object
-      formData.append("file", audioBuffer, {
-        filename: fileName,
-        contentType: mimeType,
-      });
+          const formData = new FormData();
+          formData.append("file", req.file.buffer, {
+            filename: req.file.originalname || "audio.webm",
+            contentType: req.file.mimetype || "audio/webm",
+          });
+          formData.append("model", "whisper-1");
+          formData.append("language", "en");
+          formData.append("response_format", "json");
 
-      formData.append("model", "whisper-1");
-      formData.append("language", "en"); // You can make this dynamic based on user preference
+          const transcriptionResponse = await axios.post(
+            "https://api.openai.com/v1/audio/transcriptions",
+            formData,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                ...formData.getHeaders(),
+              },
+              timeout: 60000,
+              maxContentLength: Infinity,
+              maxBodyLength: Infinity,
+            }
+          );
 
-      // Optional: Add response format for better handling
-      formData.append("response_format", "json");
-
-      console.log("Sending to OpenAI Whisper API...", {
-        fileSize: audioBuffer.length,
-        fileName,
-        mimeType,
-      });
-
-      const transcriptionResponse = await axios.post(
-        "https://api.openai.com/v1/audio/transcriptions",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            ...formData.getHeaders(),
-          },
-          timeout: 60000, // 60 seconds timeout
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
+          if (transcriptionResponse.data?.text) {
+            return transcriptionResponse.data.text.trim();
+          } else {
+            throw new Error("Empty transcription response");
+          }
+        } catch (err) {
+          if (err.response?.status === 429) {
+            console.warn(
+              `429 Too Many Requests - retrying in ${
+                delay / 1000
+              }s... (attempt ${attempt})`
+            );
+            await new Promise((r) => setTimeout(r, delay));
+            delay *= 2; // Exponential backoff
+          } else {
+            throw err;
+          }
         }
+      }
+      throw new Error(
+        "Too many requests to transcription API. Please try again later."
       );
+    };
 
-      console.log("OpenAI Response:", transcriptionResponse.data);
+    try {
+      transcription = await transcribeWithRetry();
+      console.log("Transcription successful:", transcription);
 
-      if (transcriptionResponse.data && transcriptionResponse.data.text) {
-        transcription = transcriptionResponse.data.text.trim();
-        console.log("Transcription successful:", transcription);
-
-        // Check if transcription is meaningful (not just empty or very short)
-        if (transcription.length < 2) {
-          console.log("Transcription too short:", transcription);
-          transcription =
-            "Audio was too short or unclear. Please try speaking more clearly or for a longer duration.";
-          transcriptionSuccess = false;
-        } else {
-          transcriptionSuccess = true;
-        }
-      } else {
-        console.log("No text in response:", transcriptionResponse.data);
+      if (transcription.length < 2) {
         transcription =
-          "No speech detected in the audio. Please try recording again.";
+          "Audio was too short or unclear. Please try speaking more clearly or for a longer duration.";
         transcriptionSuccess = false;
-      }
-    } catch (transcriptionError) {
-      console.error("Transcription error details:", {
-        message: transcriptionError.message,
-        response: transcriptionError.response?.data,
-        status: transcriptionError.response?.status,
-        code: transcriptionError.code,
-        headers: transcriptionError.response?.headers,
-      });
-
-      // More specific error handling based on the error type
-      if (transcriptionError.code === "ECONNABORTED") {
-        transcription =
-          "Transcription timed out. Please try with a shorter audio file.";
-      } else if (transcriptionError.response?.status === 400) {
-        const errorMessage =
-          transcriptionError.response?.data?.error?.message || "Bad request";
-        console.error("OpenAI 400 Error:", errorMessage);
-
-        if (errorMessage.includes("audio file")) {
-          transcription =
-            "Invalid audio file format. Please try recording again.";
-        } else if (errorMessage.includes("too large")) {
-          transcription =
-            "Audio file is too large. Please try a shorter recording.";
-        } else {
-          transcription =
-            "Audio format not supported. Please try recording again.";
-        }
-      } else if (transcriptionError.response?.status === 401) {
-        transcription = "Authentication failed. Please contact support.";
-        console.error("OpenAI API Key issue - Status 401");
-      } else if (transcriptionError.response?.status === 413) {
-        transcription = "Audio file too large. Please use a smaller file.";
-      } else if (transcriptionError.response?.status === 429) {
-        transcription =
-          "Too many requests. Please wait a moment and try again.";
       } else {
-        transcription =
-          "Transcription service is temporarily unavailable. Please try again or type your message.";
+        transcriptionSuccess = true;
       }
-
+    } catch (err) {
+      console.error("Final transcription error:", err.message);
+      transcription = err.message || "Transcription failed.";
       transcriptionSuccess = false;
     }
 
-    // Store metadata in MongoDB
+    // Save in DB
     try {
       const fileData = {
         type: "audio",
         url: cloudinaryResult.secure_url,
         transcription,
-        transcriptionSuccess, // Add this field to track success
+        transcriptionSuccess,
         createdAt: new Date(),
       };
 
       if (req.userId) {
         console.log("Saving to authenticated user:", req.userId);
         await userModel.findByIdAndUpdate(req.userId, {
-          $push: {
-            uploadedFiles: fileData,
-          },
+          $push: { uploadedFiles: fileData },
         });
       } else {
         console.log("Saving to temp file collection");
@@ -357,7 +322,6 @@ const uploadAudio = async (req, res) => {
       }
     } catch (dbError) {
       console.error("Database save error:", dbError);
-      // Continue even if DB save fails - don't let this break the response
     }
 
     console.log("Upload audio completed", {
@@ -365,18 +329,14 @@ const uploadAudio = async (req, res) => {
       transcriptionLength: transcription.length,
     });
 
-    // Always return success from upload perspective, but indicate transcription status
-    const responseMessage = transcriptionSuccess
-      ? "Audio uploaded and transcribed successfully"
-      : "Audio uploaded but transcription failed";
-
-    // Return the response
     res.status(200).json({
-      success: true, // Always true for upload success
+      success: true,
       transcription,
-      transcriptionSuccess, // Let the frontend know if transcription worked
+      transcriptionSuccess,
       fileUrl: cloudinaryResult.secure_url,
-      message: responseMessage,
+      message: transcriptionSuccess
+        ? "Audio uploaded and transcribed successfully"
+        : "Audio uploaded but transcription failed",
     });
   } catch (error) {
     console.error("Error uploading audio:", error);
