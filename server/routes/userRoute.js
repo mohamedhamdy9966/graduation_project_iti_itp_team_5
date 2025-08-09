@@ -52,6 +52,8 @@ userRouter.post("/pay-appointment-stripe", authUser, payAppointmentStripe);
 userRouter.post("/pay-appointment-paymob", authUser, payAppointmentPaymob);
 userRouter.post("/stripe", authUser, placeOrderStripe);
 userRouter.post("/paymob", authUser, placeOrderPaymob);
+
+// Chatbot context endpoint
 userRouter.get("/chatbot-context", async (req, res) => {
   try {
     const doctors = await doctorModel
@@ -78,8 +80,14 @@ userRouter.get("/chatbot-context", async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 });
+
+// Audio and file upload endpoints
+userRouter.post("/upload-audio", authUser, upload.single("audio"), uploadAudio); // ADD THIS LINE
 userRouter.post("/upload-audio-public", upload.single("audio"), uploadAudio);
+userRouter.post("/upload-file", authUser, upload.single("file"), uploadFile); // ADD THIS LINE
 userRouter.post("/upload-file-public", upload.single("file"), uploadFile);
+
+// Analysis endpoints
 userRouter.post("/analyze-image", authUser, analyzeImage);
 userRouter.post("/analyze-pdf", upload.single("file"), analyzePdfText);
 userRouter.post("/analyze-text", getChatResponse);

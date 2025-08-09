@@ -148,7 +148,6 @@ export const isAuth = async (req, res) => {
   }
 };
 
-// API to upload and transcribe audio
 const uploadAudio = async (req, res) => {
   try {
     if (!req.file) {
@@ -200,6 +199,7 @@ const uploadAudio = async (req, res) => {
     const transcription = transcriptionResponse.data.text;
 
     // Store metadata in MongoDB (for authenticated users only)
+    // Check if userId exists (from authUser middleware) or if this is a public upload
     if (req.userId) {
       await userModel.findByIdAndUpdate(req.userId, {
         $push: {
@@ -212,6 +212,7 @@ const uploadAudio = async (req, res) => {
         },
       });
     } else {
+      // For public uploads, store in temporary collection
       const tempFile = new tempFileModel({
         type: "audio",
         url: result.secure_url,
@@ -427,21 +428,37 @@ const analyzePdfText = async (req, res) => {
   }
 };
 
-// Helper to build the system prompt (already in your Chatbot.jsx, but moved to backend for consistency)
-const getSystemPrompt = (fileInfo = "", user = null) => {
+const getSystemPrompt = async (fileInfo = "", user = null) => {
   let prompt = `You are Roshetta Assistant, a helpful assistant for the Roshetta healthcare platform, which allows users to book appointments with doctors and labs in Egypt. The platform uses Egyptian Pounds (EGP) as currency. Provide accurate and concise answers related to healthcare, doctor appointments, lab bookings, or general queries. Users can send text, voice messages, or upload files (images or PDFs).`;
 
   if (user) {
-    prompt += `\nThe current user is ${user.name || "unknown"}, with email ${user.email || "unknown"}, blood type ${user.bloodType || "not specified"}, and medical insurance ${user.medicalInsurance || "not specified"}.`;
+    prompt += `\nThe current user is ${user.name || "unknown"}, with email ${
+      user.email || "unknown"
+    }, blood type ${user.bloodType || "not specified"}, and medical insurance ${
+      user.medicalInsurance || "not specified"
+    }.`;
 
     if (user.allergy && Object.keys(user.allergy).length > 0) {
-      prompt += `\nUser allergies: ${Object.entries(user.allergy).map(([key, value]) => `${key}: ${value}`).join(", ")}.`;
+      prompt += `\nUser allergies: ${Object.entries(user.allergy)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ")}.`;
     } else {
       prompt += `\nUser has no recorded allergies.`;
     }
 
     if (user.uploadedFiles && user.uploadedFiles.length > 0) {
-      prompt += `\nThe user has previously uploaded the following files:\n${user.uploadedFiles.map((file, index) => `${index + 1}. ${file.type} (Uploaded: ${new Date(file.createdAt).toLocaleDateString()})${file.transcription ? `, Transcription: ${file.transcription.substring(0, 50)}...` : ""}`).join("\n")}.`;
+      prompt += `\nThe user has previously uploaded the following files:\n${user.uploadedFiles
+        .map(
+          (file, index) =>
+            `${index + 1}. ${file.type} (Uploaded: ${new Date(
+              file.createdAt
+            ).toLocaleDateString()})${
+              file.transcription
+                ? `, Transcription: ${file.transcription.substring(0, 50)}...`
+                : ""
+            }`
+        )
+        .join("\n")}.`;
     }
   } else {
     prompt += `\nThis is an unauthenticated user. Do not assume any personal details unless provided in the message.`;
@@ -451,8 +468,40 @@ const getSystemPrompt = (fileInfo = "", user = null) => {
     prompt += `\nFile info: ${fileInfo}. Analyze it if relevant to the query.`;
   }
 
-  // Append available doctors/labs from context (fetch dynamically if needed)
-  // You can integrate chatbotContext here if stored globally or fetched
+  // Fetch and include available doctors and labs context
+  try {
+    const doctors = await doctorModel
+      .find({ available: true })
+      .select("name specialty fees");
+
+    const labs = await labModel
+      .find({ available: true })
+      .select("name services");
+
+    if (doctors.length > 0) {
+      prompt += `\nAvailable doctors on the platform:\n${doctors
+        .map(
+          (doc) =>
+            `- Dr. ${doc.name} (${doc.specialty}, Consultation Fee: ${doc.fees} EGP)`
+        )
+        .join("\n")}.`;
+    }
+
+    if (labs.length > 0) {
+      prompt += `\nAvailable labs on the platform:\n${labs
+        .map((lab) => `- ${lab.name} (Services: ${lab.services.join(", ")})`)
+        .join("\n")}.`;
+    }
+
+    // Add booking instructions
+    prompt += `\n\nFor appointment booking, users need to:
+1. Specify the doctor they want to see
+2. Provide their preferred date and time
+3. Be logged in to complete the booking
+If a user wants to book with a specific doctor, help them identify the exact doctor name from the available list and guide them through the process.`;
+  } catch (error) {
+    console.error("Error fetching context data:", error);
+  }
 
   return prompt;
 };
@@ -469,11 +518,16 @@ const getChatResponse = async (req, res) => {
     let user = null;
     const token = req.headers.token;
     if (token) {
-      const token_decode = jwt.verify(token, process.env.JWT_SECRET);
-      user = await userModel.findById(token_decode.id).select("-password");
+      try {
+        const token_decode = jwt.verify(token, process.env.JWT_SECRET);
+        user = await userModel.findById(token_decode.id).select("-password");
+      } catch (error) {
+        console.log("Token verification failed:", error.message);
+        // Continue without user context
+      }
     }
 
-    const systemPrompt = getSystemPrompt(fileInfo, user);
+    const systemPrompt = await getSystemPrompt(fileInfo, user);
 
     // Call OpenAI API (gpt-4o-mini or whichever model you prefer)
     const response = await axios.post(
@@ -500,7 +554,10 @@ const getChatResponse = async (req, res) => {
     res.json({ success: true, reply: botReply });
   } catch (error) {
     console.error("Error getting chat response:", error);
-    res.json({ success: false, message: "Failed to get response from AI. Please try again." });
+    res.json({
+      success: false,
+      message: "Failed to get response from AI. Please try again.",
+    });
   }
 };
 
