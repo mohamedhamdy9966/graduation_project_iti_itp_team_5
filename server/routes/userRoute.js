@@ -41,7 +41,7 @@ userRouter.post("/send-reset-otp", sendResetOtp);
 userRouter.post("/reset-password", resetPassword);
 userRouter.post(
   "/update-profile",
-  upload.single("image"),
+  upload.single("imageProfile"),
   authUser,
   updateProfile
 );
