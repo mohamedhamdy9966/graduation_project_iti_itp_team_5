@@ -17,7 +17,7 @@ const addLab = async (req, res) => {
       mobile,
       password,
       confirmPassword,
-      specialty,
+      services, // Changed from specialty to services
       fees,
       address,
     } = req.body;
@@ -29,7 +29,7 @@ const addLab = async (req, res) => {
       !email ||
       !password ||
       !confirmPassword ||
-      !specialty ||
+      !services || // Changed from specialty to services
       !mobile ||
       !fees ||
       !address
@@ -78,13 +78,25 @@ const addLab = async (req, res) => {
       imageUrl = imageUpload.secure_url;
     }
 
+    // Parse services - handle both string and array
+    let parsedServices = [];
+    if (typeof services === "string") {
+      try {
+        parsedServices = JSON.parse(services);
+      } catch {
+        parsedServices = [services]; // If it's just a single service as string
+      }
+    } else if (Array.isArray(services)) {
+      parsedServices = services;
+    }
+
     const labData = {
       name,
       email: email.toLowerCase(),
       mobile,
       password: hashedPassword,
       image: imageUrl,
-      specialty,
+      services: parsedServices, // Changed from specialty to services
       fees,
       address: JSON.parse(address),
       date: Date.now(),
@@ -235,8 +247,10 @@ const allDoctors = async (req, res) => {
 const allLabs = async (req, res) => {
   try {
     const labs = await labModel.find({}).select("-password");
+    console.log("Labs found:", labs.length); // Debug log
     res.json({ success: true, labs });
   } catch (error) {
+    console.log("Error fetching labs:", error); // Debug log
     res.json({ success: false, message: error.message });
   }
 };

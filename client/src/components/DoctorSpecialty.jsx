@@ -40,8 +40,8 @@ const DoctorSpecialty = () => {
       id="doctorSpecialty"
     >
       {/* Section Header */}
-      <motion.div
-        className="flex flex-col items-center"
+      <motion.div 
+        className="flex flex-col   items-center"
         variants={itemVariants}
       >
         <div className="flex items-center gap-3 mb-4">
@@ -56,66 +56,61 @@ const DoctorSpecialty = () => {
         </p>
       </motion.div>
 
+      {/* Helmet for SEO */}
+      <Helmet>
+        <title>Find Doctors by Specialty - Roshetta</title>
+        <meta
+          name="description"
+          content="Find doctors by specialty on Roshetta. Browse our extensive list of medical specialties to book appointments with trusted healthcare professionals."
+        />
+        <meta
+          name="keywords"
+          content="find doctors, medical specialties, book appointments, healthcare, Roshetta"
+        />
+        <link rel="canonical" href="https://www.roshetta.com/doctors" />
+        <meta
+          property="og:title"
+          content="Find Doctors by Specialty - Roshetta"
+        />
+        <meta
+          property="og:description"
+          content="Find doctors by specialty on Roshetta. Browse our extensive list of medical specialties to book appointments with trusted healthcare professionals."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.roshetta.com/doctors" />
+      </Helmet>
+
       {/* Specialty Grid */}
-      <motion.div
+      <motion.div 
         className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-6 w-full max-w-6xl"
         variants={containerVariants}
       >
-        <Helmet>
-          <title>Find Doctors by Specialty - Roshetta</title>
-          <meta
-            name="description"
-            content="Find doctors by specialty on Roshetta. Browse our extensive list of medical specialties to book appointments with trusted healthcare professionals."
-          />
-          <meta
-            name="keywords"
-            content="find doctors, medical specialties, book appointments, healthcare, Roshetta"
-          />
-          <link rel="canonical" href="https://www.roshetta.com/doctors" />
-          <meta
-            property="og:title"
-            content="Find Doctors by Specialty - Roshetta"
-          />
-          <meta
-            property="og:description"
-            content="Find doctors by specialty on Roshetta. Browse our extensive list of medical specialties to book appointments with trusted healthcare professionals."
-          />
-          <meta property="og:type" content="website" />
-          <meta property="og:url" content="https://www.roshetta.com/doctors" />
-        </Helmet>
-        <h2 className="text-3xl font-semibold text-center">Find by Specialty</h2>
-        <p className="sm:w-1/3 text-center text-sm text-gray-600">
-          Simply browse through our extensive list of medical specialties and find
-          the right doctor for your needs.
-        </p>
-        <div className="flex flex-wrap justify-center gap-6 pt-8 w-full max-w-6xl">
-          {specialtyData.map((item) => (
-            <motion.div
-              key={uuidv4()}
-              variants={itemVariants}
-              whileHover={{ y: -5, scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex justify-center"
+        {specialtyData.map((item) => (
+          <motion.div
+            key={uuidv4()}
+            variants={itemVariants}
+            whileHover={{ y: -5, scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex justify-center"
+          >
+            <Link
+              onClick={() => window.scrollTo(0, 0)}
+              to={`/doctors/${item.specialty.toLowerCase().replace(/ /g, "-")}`}
+              className="flex flex-col items-center group cursor-pointer w-full"
             >
-              <Link
-                onClick={() => window.scrollTo(0, 0)}
-                to={`/doctors/${item.specialty.toLowerCase().replace(/ /g, "-")}`}
-                className="flex flex-col items-center group cursor-pointer w-full"
-              >
-                <div className="p-4 bg-[var(--color-primary)] rounded-2xl shadow-md group-hover:shadow-lg transition-all duration-300 mb-3 w-20 h-20 flex items-center justify-center">
-                  <img
-                    className="w-12 h-12 object-contain transition-transform duration-300 group-hover:scale-110"
-                    src={item.image}
-                    alt={item.specialty}
-                  />
-                </div>
-                <p className="text-center font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-dark)] transition-colors duration-300 text-sm">
-                  {item.specialty}
-                </p>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+              <div className="p-4 bg-[var(--color-primary)] rounded-2xl shadow-md group-hover:shadow-lg transition-all duration-300 mb-3 w-20 h-20 flex items-center justify-center">
+                <img
+                  className="w-12 h-12 object-contain transition-transform duration-300 group-hover:scale-110"
+                  src={item.image}
+                  alt={item.specialty}
+                />
+              </div>
+              <p className="text-center font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-dark)] transition-colors duration-300 text-sm">
+                {item.specialty}
+              </p>
+            </Link>
+          </motion.div>
+        ))}
       </motion.div>
 
       {/* Decorative Elements */}

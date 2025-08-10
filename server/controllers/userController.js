@@ -846,8 +846,13 @@ const getProfile = async (req, res) => {
 };
 
 // API to update user profile
+// API to update user profile
 const updateProfile = async (req, res) => {
   try {
+    console.log("Update profile request received");
+    console.log("Request body keys:", Object.keys(req.body));
+    console.log("File present:", !!req.file);
+
     const {
       userId,
       name,
@@ -858,29 +863,109 @@ const updateProfile = async (req, res) => {
       medicalInsurance,
       allergy,
     } = req.body;
-    const imageProfile = req.file;
-    if (!name || !phone || !birthDate || !gender || !medicalInsurance) {
-      return res.json({ success: false, message: "Data Missing" });
-    }
-    await userModel.findByIdAndUpdate(userId, {
+
+    const imageFile = req.file; // Changed variable name for clarity
+
+    console.log("Parsed data:", {
+      userId,
       name,
       phone,
-      address: JSON.parse(address),
+      address: typeof address === "string" ? "JSON string" : typeof address,
       birthDate,
       gender,
       medicalInsurance,
-      allergy: JSON.parse(allergy) || {},
+      allergy: typeof allergy === "string" ? "JSON string" : typeof allergy,
+      hasImage: !!imageFile,
     });
-    if (imageProfile) {
-      const imageUpload = await cloudinary.uploader.upload(imageProfile.path, {
-        resource_type: "image",
-      });
-      const imageURL = imageUpload.secure_url;
-      await userModel.findByIdAndUpdate(userId, { image: imageURL });
+
+    // Validation
+    if (!name || !phone || !birthDate || !gender || !medicalInsurance) {
+      console.log("Validation failed - missing required fields");
+      return res.json({ success: false, message: "Data Missing" });
     }
+
+    // Parse JSON strings
+    let parsedAddress, parsedAllergy;
+    try {
+      parsedAddress =
+        typeof address === "string" ? JSON.parse(address) : address;
+      parsedAllergy =
+        typeof allergy === "string" ? JSON.parse(allergy) : allergy || {};
+    } catch (parseError) {
+      console.error("JSON parsing error:", parseError);
+      return res.json({
+        success: false,
+        message: "Invalid JSON format in address or allergy data",
+      });
+    }
+
+    // Update user data
+    const updateData = {
+      name,
+      mobile: phone, // Note: using 'mobile' to match your schema
+      address: parsedAddress,
+      birthDate,
+      gender,
+      medicalInsurance,
+      allergy: parsedAllergy,
+    };
+
+    console.log("Updating user with data:", updateData);
+
+    await userModel.findByIdAndUpdate(userId, updateData);
+
+    // Handle image upload if present
+    if (imageFile) {
+      console.log("Processing image upload");
+      console.log("Image file details:", {
+        originalname: imageFile.originalname,
+        mimetype: imageFile.mimetype,
+        size: imageFile.size,
+      });
+
+      try {
+        // Upload to Cloudinary using buffer (since we're using memory storage)
+        const imageUpload = await new Promise((resolve, reject) => {
+          cloudinary.uploader
+            .upload_stream(
+              {
+                resource_type: "image",
+                folder: "user_profiles", // Optional: organize uploads
+              },
+              (error, result) => {
+                if (error) {
+                  console.error("Cloudinary upload error:", error);
+                  reject(error);
+                } else {
+                  console.log("Cloudinary upload success:", result.secure_url);
+                  resolve(result);
+                }
+              }
+            )
+            .end(imageFile.buffer);
+        });
+
+        const imageURL = imageUpload.secure_url;
+
+        // Update user with new image URL
+        await userModel.findByIdAndUpdate(userId, { image: imageURL });
+        console.log("User image updated successfully");
+      } catch (imageError) {
+        console.error("Image upload error:", imageError);
+        // Don't fail the entire request if only image upload fails
+        return res.json({
+          success: false,
+          message: `Profile updated but image upload failed: ${imageError.message}`,
+        });
+      }
+    }
+
+    console.log("Profile update completed successfully");
     res.json({ success: true, message: "Profile Updated" });
   } catch (error) {
-    res.json({ success: false, message: error.message });
+    console.error("Update profile error:", error);
+    console.error("Error stack:", error.stack);
+    res.json({ success: false, message: `Update failed: ${error.message}` });
   }
 };
 

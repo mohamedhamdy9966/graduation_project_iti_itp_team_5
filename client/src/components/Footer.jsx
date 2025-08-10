@@ -16,7 +16,10 @@ import logo from "../assets/logo7.png";
 
 const Footer = () => {
   return (
-    <footer className="w-full pt-16 pb-8 bg-primaryDark">
+    <footer
+      className="w-full pt-16 pb-8"
+      style={{ backgroundColor: "#0097A7" }}
+    >
       {/* Main Content Container */}
       <div className="w-full max-w-7xl mx-auto px-4 md:px-8">
         {/* Grid Layout */}
@@ -32,11 +35,12 @@ const Footer = () => {
                 className="mr-0 mb-2"
               />
               <span
-                className="text-2xl font-bold mr-2 text-white font-logo"
-                style={{ letterSpacing: "1px" }} // Keep if font-logo doesn't apply correctly
+                className="text-2xl font-bold mr-2 text-white"
+                style={{ fontFamily: "var(--logo-font)", letterSpacing: "1px" }}
               >
                 Roshetta
               </span>
+              {/* <MdHealthAndSafety className="text-2xl text-white" /> */}
             </div>
             <p className="text-white text-opacity-90 leading-relaxed mb-4">
               Roshetta is your trusted platform to easily find and book
@@ -76,7 +80,7 @@ const Footer = () => {
           {/* Quick Links */}
           <div>
             <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
-              <HiInformationCircle className="mr-2 text-white text-2xl" />
+              <HiInformationCircle className="mr-2 text-white  text-2xl" />
               Quick Links
             </h3>
             <ul className="space-y-2">
@@ -147,12 +151,13 @@ const Footer = () => {
 
         {/* Copyright */}
         <div className="text-center text-white text-opacity-80 text-sm">
-          © {new Date().getFullYear()} Roshetta — All Rights Reserved.
+          <span className="text-orange-900">TAXI </span> © {new Date().getFullYear()} Roshetta — All Rights
+          Reserved.
         </div>
       </div>
 
       {/* Social Icons Style */}
-      <style>{`
+      <style jsx>{`
         .social-icon {
           display: flex;
           align-items: center;

@@ -23,14 +23,20 @@ const MyProfile = () => {
       formData.append("medicalInsurance", userData.medicalInsurance);
       formData.append("allergy", JSON.stringify(userData.allergy || {}));
 
+      // Fixed: Change "image" to "imageProfile" to match backend expectation
       if (image) {
-        formData.append("image", image);
+        formData.append("imageProfile", image);
       }
 
       const { data } = await axios.post(
         backendUrl + "/api/user/update-profile",
         formData,
-        { headers: { token } }
+        {
+          headers: {
+            token,
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
 
       if (data.success) {
@@ -42,7 +48,8 @@ const MyProfile = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.message);
+      console.error("Profile update error:", error);
+      toast.error(error.response?.data?.message || error.message);
     }
   };
 

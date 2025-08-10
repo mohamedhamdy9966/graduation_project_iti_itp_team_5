@@ -9,6 +9,24 @@ import * as Yup from "yup";
 const AddLab = () => {
   const { backendUrl, aToken, getAllLabs } = useContext(AdminContext);
 
+  // Available services options
+  const serviceOptions = [
+    "CBC",
+    "Blood Chemistry",
+    "Urine Analysis",
+    "Stool Analysis",
+    "X-Ray",
+    "CT Scan",
+    "MRI",
+    "Ultrasound",
+    "ECG",
+    "Echo",
+    "Microbiology",
+    "Histopathology",
+    "Cytology",
+    "Immunology",
+  ];
+
   // Yup validation schema
   const validationSchema = Yup.object().shape({
     docImg: Yup.mixed()
@@ -32,7 +50,9 @@ const AddLab = () => {
     fees: Yup.number()
       .min(0, "Fees must be a positive number")
       .required("Fees is required"),
-    services: Yup.array().required("services is required"),
+    services: Yup.array()
+      .min(1, "At least one service must be selected")
+      .required("Services are required"),
     address1: Yup.string().required("Street address is required"),
     address2: Yup.string().required("City, State, ZIP is required"),
   });
@@ -62,11 +82,13 @@ const AddLab = () => {
       formData.append("password", values.password);
       formData.append("confirmPassword", values.confirmPassword);
       formData.append("fees", Number(values.fees));
-      formData.append("services", values.services);
+      formData.append("services", JSON.stringify(values.services)); // Changed to JSON.stringify
       formData.append(
         "address",
         JSON.stringify({ line1: values.address1, line2: values.address2 })
       );
+
+      console.log("Submitting lab with services:", values.services); // Debug log
 
       const { data } = await axios.post(
         backendUrl + "/api/admin/add-lab",
@@ -81,6 +103,7 @@ const AddLab = () => {
         toast.error(data.message);
       }
     } catch (error) {
+      console.error("Submit error:", error); // Debug log
       toast.error(error.message);
     } finally {
       setSubmitting(false);
@@ -96,7 +119,7 @@ const AddLab = () => {
         validationSchema={validationSchema}
         onSubmit={onSubmitHandler}
       >
-        {({ isSubmitting, setFieldValue }) => (
+        {({ isSubmitting, setFieldValue, values }) => (
           <Form className="space-y-6">
             {/* Image Upload Section */}
             <div className="flex flex-col items-center mb-8">
@@ -153,7 +176,7 @@ const AddLab = () => {
                   <Field
                     type="text"
                     name="name"
-                    placeholder="Full Name"
+                    placeholder="Lab Name"
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   />
                   <ErrorMessage
@@ -253,21 +276,24 @@ const AddLab = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    services
+                    Services (Select multiple)
                   </label>
-                  <Field
-                    as="select"
-                    name="services"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="CBC">CBC</option>
-                    <option value="Gynecologist">Gynecologist</option>
-                    <option value="Dermatologist">Dermatologist</option>
-                    <option value="Pediatrician">Pediatrician</option>
-                    <option value="Surgery">Surgery</option>
-                    <option value="ENT">ENT</option>
-                    <option value="Bones">Bones</option>
-                  </Field>
+                  <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
+                    {serviceOptions.map((service) => (
+                      <label
+                        key={service}
+                        className="flex items-center space-x-2 mb-2"
+                      >
+                        <Field
+                          type="checkbox"
+                          name="services"
+                          value={service}
+                          className="form-checkbox h-4 w-4 text-blue-600"
+                        />
+                        <span className="text-sm">{service}</span>
+                      </label>
+                    ))}
+                  </div>
                   <ErrorMessage
                     name="services"
                     component="div"
@@ -312,7 +338,7 @@ const AddLab = () => {
                 disabled={isSubmitting}
                 className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50"
               >
-                Add Lab
+                {isSubmitting ? "Adding Lab..." : "Add Lab"}
               </button>
             </div>
           </Form>

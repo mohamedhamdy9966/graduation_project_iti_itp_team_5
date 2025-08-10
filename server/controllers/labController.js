@@ -6,9 +6,9 @@ import appointmentLabModel from "../models/appointmentLabModel.js";
 const changeLabAvailability = async (req, res) => {
   try {
     const labId = req.labId;
-    const docData = await labModel.findById(labId);
+    const labData = await labModel.findById(labId);
     await labModel.findByIdAndUpdate(labId, {
-      available: !docData.available,
+      available: !labData.available,
     });
     res.json({ success: true, message: "Availability Changed" });
   } catch (error) {
@@ -18,13 +18,13 @@ const changeLabAvailability = async (req, res) => {
 
 const labList = async (req, res) => {
   try {
-    const labs = await labModel
-      .find({})
-      .select(
-        "name email mobile image specialty degree experience about available fees address date slotsBooked"
-      );
+    const labs = await labModel.find({}).select(
+      "name email mobile image services available fees address date slotsBooked" // Changed from specialty to services
+    );
+    console.log("Labs fetched from labController:", labs.length); // Debug log
     res.json({ success: true, labs });
   } catch (error) {
+    console.log("Error in labList controller:", error); // Debug log
     res.json({ success: false, message: error.message });
   }
 };
@@ -151,8 +151,15 @@ const labProfile = async (req, res) => {
 const updateLabProfile = async (req, res) => {
   try {
     const labId = req.labId;
-    const { fees, address, available } = req.body;
-    await labModel.findByIdAndUpdate(labId, { fees, address, available });
+    const { fees, address, available, services } = req.body; // Added services
+
+    // Build update object
+    const updateData = { fees, address, available };
+    if (services) {
+      updateData.services = services;
+    }
+
+    await labModel.findByIdAndUpdate(labId, updateData);
     res.json({ success: true, message: "Profile Updated" });
   } catch (error) {
     res.json({ success: false, message: error.message });
