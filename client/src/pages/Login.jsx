@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
@@ -145,6 +146,31 @@ const Login = () => {
     }
   };
 
+  const handleGoogleSuccess = async (response) => {
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/user/google-auth`, {
+        token: response.credential,
+      });
+      if (data.success) {
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        toast.success("Google authentication successful");
+        navigate("/");
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error("Google authentication failed");
+      console.log(error);
+    }
+  };
+
+  // Google Sign-In failure handler
+  const handleGoogleFailure = (error) => {
+    console.error("Google Sign-In error:", error);
+    toast.error("Google Sign-In failed");
+  };
+
   useEffect(() => {
     if (token) {
       navigate("/");
@@ -152,6 +178,7 @@ const Login = () => {
   }, [token, navigate]);
 
   return (
+    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-white px-4">
       <Helmet>
         <title>
@@ -567,6 +594,7 @@ const Login = () => {
         </Formik>
       )}
     </div>
+    </GoogleOAuthProvider>
   );
 };
 
