@@ -22,6 +22,7 @@ import {
   sendResetOtp,
   resetPassword,
   getChatResponse,
+  googleAuth
 } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
 import upload from "../middlewares/multer.js";
@@ -33,6 +34,7 @@ const userRouter = express.Router();
 // Existing routes
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
+userRouter.post("/google-auth", googleAuth);
 userRouter.get("/get-profile", authUser, getProfile);
 userRouter.get("/is-auth", authUser, isAuth);
 userRouter.post("/send-verify-otp", authUser, sendVerifyOtp);
