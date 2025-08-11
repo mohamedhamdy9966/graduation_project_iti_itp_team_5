@@ -94,22 +94,20 @@ const Login = () => {
         if (data.success) {
           localStorage.setItem("token", data.token);
           setToken(data.token);
-          toast.success("Please verify your email to continue.");
-          navigate("/verify-email", {
-            state: { userId: data.userId || data.token_decode?.id },
-          });
+          toast.success(data.message);
+          navigate("/");
         } else {
           toast.error(data.message);
         }
-      } else {
+      } else if (state === "Login") {
         const { data } = await axios.post(`${backendUrl}/api/user/login`, {
-          password: values.password,
           email: values.email,
+          password: values.password,
         });
         if (data.success) {
           localStorage.setItem("token", data.token);
           setToken(data.token);
-          toast.success("Logged in successfully");
+          toast.success(data.message);
           navigate("/");
         } else {
           toast.error(data.message);
@@ -133,6 +131,7 @@ const Login = () => {
       );
       if (data.success) {
         toast.success(data.message);
+        setEmailForReset(values.email);
         navigate("/reset-password", {
           state: { userId: data.userId, email: values.email },
         });
@@ -146,6 +145,7 @@ const Login = () => {
     }
   };
 
+  // Google Sign-In success handler
   const handleGoogleSuccess = async (response) => {
     try {
       const { data } = await axios.post(`${backendUrl}/api/user/google-auth`, {
@@ -162,6 +162,7 @@ const Login = () => {
     } catch (error) {
       toast.error("Google authentication failed");
       console.log(error);
+      
     }
   };
 
@@ -171,6 +172,7 @@ const Login = () => {
     toast.error("Google Sign-In failed");
   };
 
+  // Redirect if already logged in
   useEffect(() => {
     if (token) {
       navigate("/");
@@ -178,422 +180,395 @@ const Login = () => {
   }, [token, navigate]);
 
   return (
-    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-white px-4">
-      <Helmet>
-        <title>
-          {state === "Sign Up"
-            ? "Sign Up"
-            : forgotPassword
-            ? "Forgot Password"
-            : "Login"}{" "}
-          - Your Healthcare Platform
-        </title>
-        <meta
-          name="description"
-          content={
-            state === "Sign Up"
-              ? "Create an account on Your Healthcare Platform to book appointments with top doctors and manage your medical information."
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-white px-4">
+        <Helmet>
+          <title>
+            Roshetta |{" "}
+            {state === "Sign Up"
+              ? "Create Account"
               : forgotPassword
-              ? "Reset your password for Your Healthcare Platform."
-              : "Log in to Your Healthcare Platform to access your account and book appointments with trusted medical professionals."
-          }
-        />
-        <meta
-          name="keywords"
-          content={
-            state === "Sign Up"
-              ? "sign up, create account, healthcare, book doctor appointments, medical platform"
+              ? "Reset Password"
+              : "Login"}
+          </title>
+        </Helmet>
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
+          <div className="flex justify-center mb-6">
+            <img src={assets.logo} alt="Roshetta Logo" className="h-12" />
+          </div>
+          <h2 className="text-2xl font-bold text-center text-indigo-700 mb-6">
+            {state === "Sign Up"
+              ? "Create Account"
               : forgotPassword
-              ? "forgot password, reset password, healthcare, medical platform"
-              : "login, access account, healthcare, book doctor appointments, medical platform"
-          }
-        />
-        <link
-          rel="canonical"
-          href={`https://www.yourhealthcare.com/${
-            state === "Sign Up"
-              ? "signup"
-              : forgotPassword
-              ? "forgot-password"
-              : "login"
-          }`}
-        />
-        <meta
-          property="og:title"
-          content={`${
-            state === "Sign Up"
-              ? "Sign Up"
-              : forgotPassword
-              ? "Forgot Password"
-              : "Login"
-          } - Your Healthcare Platform`}
-        />
-        <meta
-          property="og:description"
-          content={
-            state === "Sign Up"
-              ? "Create an account on Your Healthcare Platform to book appointments with top doctors and manage your medical information."
-              : forgotPassword
-              ? "Reset your password for Your Healthcare Platform."
-              : "Log in to Your Healthcare Platform to access your account and book appointments with trusted medical professionals."
-          }
-        />
-        <meta property="og:type" content="website" />
-        <meta
-          property="og:url"
-          content={`https://www.yourhealthcare.com/${
-            state === "Sign Up"
-              ? "signup"
-              : forgotPassword
-              ? "forgot-password"
-              : "login"
-          }`}
-        />
-        <meta property="og:image" content={assets.logo} />
-      </Helmet>
-      {forgotPassword ? (
-        <Formik
-          initialValues={{ email: "" }}
-          validationSchema={forgotPasswordSchema}
-          onSubmit={handleForgotPassword}
-        >
-          {({ isSubmitting }) => (
-            <Form className="flex flex-col gap-6 p-8 w-full max-w-md bg-white border border-indigo-100 rounded-2xl shadow-xl transform transition-all duration-300 hover:shadow-2xl">
-              <img
-                src={assets.logo}
-                alt="Roshetta logo"
-                className="w-36 mx-auto mb-6 transform hover:scale-105 transition-transform duration-300"
-              />
-              <h1 className="text-3xl font-bold text-indigo-900 text-center">
-                Forgot Password
-              </h1>
-              <p className="text-indigo-600 text-center text-sm font-medium">
-                Enter your email to receive a password reset OTP
-              </p>
-              <div className="w-full">
-                <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                  Email
-                </label>
-                <Field
-                  type="email"
-                  name="email"
-                  className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your email"
-                />
-                <ErrorMessage
-                  name="email"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg text-base font-semibold hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-300 shadow-md disabled:opacity-50"
-              >
-                Send OTP
-              </button>
-              <p className="text-center text-indigo-700 text-sm font-medium">
-                Back to{" "}
-                <span
-                  onClick={() => setForgotPassword(false)}
-                  className="text-indigo-500 font-semibold underline cursor-pointer hover:text-indigo-600 transition-colors duration-200"
-                >
-                  Login
-                </span>
-              </p>
-            </Form>
-          )}
-        </Formik>
-      ) : (
-        <Formik
-          initialValues={initialValues}
-          validationSchema={state === "Sign Up" ? signUpSchema : loginSchema}
-          onSubmit={onSubmitHandler}
-        >
-          {({ isSubmitting }) => (
-            <Form className="flex flex-col gap-6 p-8 w-full max-w-md bg-white border border-indigo-100 rounded-2xl shadow-xl transform transition-all duration-300 hover:shadow-2xl">
-              <img
-                src={assets.logo}
-                alt="Roshetta logo"
-                className="w-36 mx-auto mb-6 transform hover:scale-105 transition-transform duration-300"
-              />
-              <h1 className="text-3xl font-bold text-indigo-900 text-center">
-                {state === "Sign Up" ? "Create Account" : "Welcome Back"}
-              </h1>
-              <p className="text-indigo-600 text-center text-sm font-medium">
-                Please {state === "Sign Up" ? "create an account" : "log in"} to
-                book an appointment
-              </p>
-              {state === "Sign Up" && (
-                <>
-                  <div className="w-full">
-                    <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                      Full Name
-                    </label>
-                    <Field
-                      type="text"
-                      name="name"
-                      className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                      placeholder="Enter your full name"
-                    />
-                    <ErrorMessage
-                      name="name"
-                      component="div"
-                      className="text-red-500 text-sm mt-1"
-                    />
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                      Mobile
-                    </label>
-                    <Field
-                      type="tel"
-                      name="mobile"
-                      className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                      placeholder="Enter your mobile number"
-                    />
-                    <ErrorMessage
-                      name="mobile"
-                      component="div"
-                      className="text-red-500 text-sm mt-1"
-                    />
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                      Birth Date
-                    </label>
-                    <Field
-                      type="date"
-                      name="birthDate"
-                      className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                      placeholder="Select your birth date"
-                    />
-                    <ErrorMessage
-                      name="birthDate"
-                      component="div"
-                      className="text-red-500 text-sm mt-1"
-                    />
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                      Blood Type
-                    </label>
-                    <Field
-                      as="select"
-                      name="bloodType"
-                      className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+              ? "Reset Password"
+              : "Login"}
+          </h2>
+
+          {forgotPassword ? (
+            <Formik
+              initialValues={{ email: "" }}
+              validationSchema={forgotPasswordSchema}
+              onSubmit={handleForgotPassword}
+            >
+              {({ isSubmitting }) => (
+                <Form>
+                  <div className="mb-4">
+                    <label
+                      htmlFor="email"
+                      className="block text-indigo-700 text-sm font-semibold mb-2"
                     >
-                      <option value="" disabled>
-                        Select Blood Type
-                      </option>
-                      <option value="A+">A+</option>
-                      <option value="A-">A-</option>
-                      <option value="B+">B+</option>
-                      <option value="B-">B-</option>
-                      <option value="AB+">AB+</option>
-                      <option value="AB-">AB-</option>
-                      <option value="O+">O+</option>
-                      <option value="O-">O-</option>
-                    </Field>
-                    <ErrorMessage
-                      name="bloodType"
-                      component="div"
-                      className="text-red-500 text-sm mt-1"
-                    />
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                      Gender
+                      Email Address
                     </label>
                     <Field
-                      as="select"
-                      name="gender"
+                      type="email"
+                      name="email"
                       className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                    >
-                      <option value="" disabled>
-                        Select Gender
-                      </option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </Field>
+                      placeholder="Enter your email"
+                    />
                     <ErrorMessage
-                      name="gender"
+                      name="email"
                       component="div"
                       className="text-red-500 text-sm mt-1"
                     />
                   </div>
-                  <div className="w-full">
-                    <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                      Allergies
-                    </label>
-                    <Field
-                      type="text"
-                      name="allergy"
-                      className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                      placeholder="Enter allergies (comma-separated, e.g., Peanuts, Dust)"
-                    />
-                    <ErrorMessage
-                      name="allergy"
-                      component="div"
-                      className="text-red-500 text-sm mt-1"
-                    />
-                  </div>
-                  <div className="w-full">
-                    <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                      Medical Insurance
-                    </label>
-                    <Field
-                      as="select"
-                      name="medicalInsurance"
-                      className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                    >
-                      <option value="" disabled>
-                        Select Insurance Provider
-                      </option>
-                      <option value="None">None</option>
-                      <option value="Blue Cross Blue Shield">
-                        Blue Cross Blue Shield
-                      </option>
-                      <option value="Aetna">Aetna</option>
-                      <option value="Cigna">Cigna</option>
-                      <option value="UnitedHealthcare">UnitedHealthcare</option>
-                      <option value="Medicare">Medicare</option>
-                      <option value="Medicaid">Medicaid</option>
-                    </Field>
-                    <ErrorMessage
-                      name="medicalInsurance"
-                      component="div"
-                      className="text-red-500 text-sm mt-1"
-                    />
-                  </div>
-                </>
-              )}
-              <div className="w-full">
-                <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                  Email
-                </label>
-                <Field
-                  type="email"
-                  name="email"
-                  className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your email"
-                />
-                <ErrorMessage
-                  name="email"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
-              <div className="w-full">
-                <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Field
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your password"
-                  />
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-indigo-500 hover:text-indigo-600 transition-colors"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg text-base font-semibold hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-300 shadow-md disabled:opacity-50"
                   >
-                    {showPassword ? (
-                      <AiOutlineEyeInvisible className="h-5 w-5" />
-                    ) : (
-                      <AiOutlineEye className="h-5 w-5" />
-                    )}
+                    Send Reset OTP
                   </button>
-                </div>
-                <ErrorMessage
-                  name="password"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
-              {state === "Sign Up" && (
-                <div className="w-full">
-                  <label className="block text-indigo-800 font-semibold text-sm mb-2">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <Field
-                      type={showConfirmPassword ? "text" : "password"}
-                      name="confirmPassword"
-                      className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
-                      placeholder="Confirm your password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-indigo-500 hover:text-indigo-600 transition-colors"
-                      aria-label={
-                        showConfirmPassword
-                          ? "Hide confirm password"
-                          : "Show confirm password"
-                      }
+                  <p className="text-center text-indigo-700 text-sm font-medium mt-4">
+                    Back to{" "}
+                    <span
+                      onClick={() => setForgotPassword(false)}
+                      className="text-indigo-500 font-semibold underline cursor-pointer hover:text-indigo-600 transition-colors duration-200"
                     >
-                      {showConfirmPassword ? (
-                        <AiOutlineEyeInvisible className="h-5 w-5" />
-                      ) : (
-                        <AiOutlineEye className="h-5 w-5" />
-                      )}
-                    </button>
+                      Login
+                    </span>
+                  </p>
+                </Form>
+              )}
+            </Formik>
+          ) : (
+            <Formik
+              initialValues={initialValues}
+              validationSchema={
+                state === "Sign Up" ? signUpSchema : loginSchema
+              }
+              onSubmit={onSubmitHandler}
+            >
+              {({ isSubmitting }) => (
+                <Form>
+                  {state === "Sign Up" && (
+                    <div className="mb-4">
+                      <label
+                        htmlFor="name"
+                        className="block text-indigo-700 text-sm font-semibold mb-2"
+                      >
+                        Full Name
+                      </label>
+                      <Field
+                        type="text"
+                        name="name"
+                        className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                        placeholder="Enter your full name"
+                      />
+                      <ErrorMessage
+                        name="name"
+                        component="div"
+                        className="text-red-500 text-sm mt-1"
+                      />
+                    </div>
+                  )}
+                  <div className="mb-4">
+                    <label
+                      htmlFor="email"
+                      className="block text-indigo-700 text-sm font-semibold mb-2"
+                    >
+                      Email Address
+                    </label>
+                    <Field
+                      type="email"
+                      name="email"
+                      className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                      placeholder="Enter your email"
+                    />
+                    <ErrorMessage
+                      name="email"
+                      component="div"
+                      className="text-red-500 text-sm mt-1"
+                    />
                   </div>
-                  <ErrorMessage
-                    name="confirmPassword"
-                    component="div"
-                    className="text-red-500 text-sm mt-1"
-                  />
-                </div>
-              )}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg text-base font-semibold hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-300 shadow-md disabled:opacity-50"
-              >
-                {state === "Sign Up" ? "Create Account" : "Login"}
-              </button>
-              {state === "Login" && (
-                <p className="text-center text-indigo-700 text-sm font-medium">
-                  Forgot Password?{" "}
-                  <span
-                    onClick={() => setForgotPassword(true)}
-                    className="text-indigo-500 font-semibold underline cursor-pointer hover:text-indigo-600 transition-colors duration-200"
+                  {state === "Sign Up" && (
+                    <>
+                      <div className="mb-4">
+                        <label
+                          htmlFor="mobile"
+                          className="block text-indigo-700 text-sm font-semibold mb-2"
+                        >
+                          Mobile Number
+                        </label>
+                        <Field
+                          type="text"
+                          name="mobile"
+                          className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                          placeholder="Enter your mobile number"
+                        />
+                        <ErrorMessage
+                          name="mobile"
+                          component="div"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label
+                          htmlFor="birthDate"
+                          className="block text-indigo-700 text-sm font-semibold mb-2"
+                        >
+                          Birth Date
+                        </label>
+                        <Field
+                          type="date"
+                          name="birthDate"
+                          className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                        />
+                        <ErrorMessage
+                          name="birthDate"
+                          component="div"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label
+                          htmlFor="bloodType"
+                          className="block text-indigo-700 text-sm font-semibold mb-2"
+                        >
+                          Blood Type
+                        </label>
+                        <Field
+                          as="select"
+                          name="bloodType"
+                          className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                        >
+                          <option value="">Select Blood Type</option>
+                          <option value="A+">A+</option>
+                          <option value="A-">A-</option>
+                          <option value="B+">B+</option>
+                          <option value="B-">B-</option>
+                          <option value="AB+">AB+</option>
+                          <option value="AB-">AB-</option>
+                          <option value="O+">O+</option>
+                          <option value="O-">O-</option>
+                        </Field>
+                        <ErrorMessage
+                          name="bloodType"
+                          component="div"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label
+                          htmlFor="gender"
+                          className="block text-indigo-700 text-sm font-semibold mb-2"
+                        >
+                          Gender
+                        </label>
+                        <Field
+                          as="select"
+                          name="gender"
+                          className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </Field>
+                        <ErrorMessage
+                          name="gender"
+                          component="div"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label
+                          htmlFor="medicalInsurance"
+                          className="block text-indigo-700 text-sm font-semibold mb-2"
+                        >
+                          Medical Insurance
+                        </label>
+                        <Field
+                          type="text"
+                          name="medicalInsurance"
+                          className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                          placeholder="Enter your medical insurance"
+                        />
+                        <ErrorMessage
+                          name="medicalInsurance"
+                          component="div"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label
+                          htmlFor="allergy"
+                          className="block text-indigo-700 text-sm font-semibold mb-2"
+                        >
+                          Allergies (optional, comma-separated)
+                        </label>
+                        <Field
+                          type="text"
+                          name="allergy"
+                          className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                          placeholder="e.g., Peanuts, Penicillin"
+                        />
+                        <ErrorMessage
+                          name="allergy"
+                          component="div"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+                    </>
+                  )}
+                  <div className="mb-4">
+                    <label
+                      htmlFor="password"
+                      className="block text-indigo-700 text-sm font-semibold mb-2"
+                    >
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Field
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                        placeholder="Enter your password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-indigo-500 hover:text-indigo-600 transition-colors"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showPassword ? (
+                          <AiOutlineEyeInvisible className="h-5 w-5" />
+                        ) : (
+                          <AiOutlineEye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
+                    <ErrorMessage
+                      name="password"
+                      component="div"
+                      className="text-red-500 text-sm mt-1"
+                    />
+                  </div>
+                  {state === "Sign Up" && (
+                    <div className="mb-4">
+                      <label
+                        htmlFor="confirmPassword"
+                        className="block text-indigo-700 text-sm font-semibold mb-2"
+                      >
+                        Confirm Password
+                      </label>
+                      <div className="relative">
+                        <Field
+                          type={showConfirmPassword ? "text" : "password"}
+                          name="confirmPassword"
+                          className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                          placeholder="Confirm your password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-indigo-500 hover:text-indigo-600 transition-colors"
+                          aria-label={
+                            showConfirmPassword
+                              ? "Hide confirm password"
+                              : "Show confirm password"
+                          }
+                        >
+                          {showConfirmPassword ? (
+                            <AiOutlineEyeInvisible className="h-5 w-5" />
+                          ) : (
+                            <AiOutlineEye className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+                      <ErrorMessage
+                        name="confirmPassword"
+                        component="div"
+                        className="text-red-500 text-sm mt-1"
+                      />
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg text-base font-semibold hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-300 shadow-md disabled:opacity-50"
                   >
-                    Reset Password
-                  </span>
-                </p>
+                    {state === "Sign Up" ? "Create Account" : "Login"}
+                  </button>
+                  {state === "Login" && (
+                    <p className="text-center text-indigo-700 text-sm font-medium mt-4">
+                      Forgot Password?{" "}
+                      <span
+                        onClick={() => setForgotPassword(true)}
+                        className="text-indigo-500 font-semibold underline cursor-pointer hover:text-indigo-600 transition-colors duration-200"
+                      >
+                        Reset Password
+                      </span>
+                    </p>
+                  )}
+                  <p className="text-center text-indigo-700 text-sm font-medium mt-4">
+                    {state === "Sign Up"
+                      ? "Already have an account?"
+                      : "Create a new account?"}{" "}
+                    <span
+                      onClick={() => {
+                        setState(state === "Sign Up" ? "Login" : "Sign Up");
+                        setForgotPassword(false);
+                      }}
+                      className="text-indigo-500 font-semibold underline cursor-pointer hover:text-indigo-600 transition-colors duration-200"
+                    >
+                      {state === "Sign Up" ? "Login Here" : "Sign Up"}
+                    </span>
+                  </p>
+                  {/* Google Sign-In Button */}
+                  <div className="mt-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-indigo-200"></div>
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="px-2 bg-white text-indigo-700 font-medium">
+                          Or continue with
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleFailure}
+                        text="continue_with"
+                        shape="rectangular"
+                        width="100%"
+                        theme="outline"
+                        logo_alignment="left"
+                        className="w-full flex items-center justify-center py-3 border border-indigo-200 rounded-lg bg-white text-indigo-700 text-base font-semibold hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-300 shadow-sm"
+                      />
+                    </div>
+                  </div>
+                </Form>
               )}
-              <p className="text-center text-indigo-700 text-sm font-medium">
-                {state === "Sign Up"
-                  ? "Already have an account?"
-                  : "Create a new account?"}{" "}
-                <span
-                  onClick={() => {
-                    setState(state === "Sign Up" ? "Login" : "Sign Up");
-                    setForgotPassword(false);
-                  }}
-                  className="text-indigo-500 font-semibold underline cursor-pointer hover:text-indigo-600 transition-colors duration-200"
-                >
-                  {state === "Sign Up" ? "Login Here" : "Sign Up"}
-                </span>
-              </p>
-            </Form>
+            </Formik>
           )}
-        </Formik>
-      )}
-    </div>
+        </div>
+      </div>
     </GoogleOAuthProvider>
   );
 };
