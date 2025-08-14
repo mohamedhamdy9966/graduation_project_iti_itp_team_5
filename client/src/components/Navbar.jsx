@@ -2,6 +2,7 @@ import { useContext, useState, useEffect, useRef } from "react";
 import { assets } from "../assets/assets_frontend/assets";
 import { NavLink, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
+import { FiShoppingCart } from "react-icons/fi";
 import logo from "../assets/logo7.png";
 
 const Navbar = () => {
@@ -31,11 +32,13 @@ const Navbar = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
-      
+
       // For mobile menu
-      if (mobileMenuRef.current && 
-          !mobileMenuRef.current.contains(event.target) &&
-          !event.target.closest('button[aria-label="Toggle menu"]')) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target) &&
+        !event.target.closest('button[aria-label="Toggle menu"]')
+      ) {
         setMenuOpen(false);
       }
     };
@@ -50,10 +53,28 @@ const Navbar = () => {
     { label: "Home", path: "/", icon: "fa-home" },
     { label: "Doctors", path: "/doctors", icon: "fa-user-doctor" },
     { label: "Labs", path: "/labs", icon: "fa-flask" },
-    { label: "Drug Store", path: "/drugs", icon: "fa-prescription-bottle-medical" },
+    {
+      label: "Drug Store",
+      path: "/drugs",
+      icon: "fa-prescription-bottle-medical",
+    },
     { label: "About", path: "/about", icon: "fa-info-circle" },
     { label: "Contact", path: "/contact", icon: "fa-phone" },
   ];
+
+  // Cart component for reusability
+  const CartIcon = ({ size = "text-xl" }) => (
+    <NavLink to="/cart" className="relative">
+      <FiShoppingCart
+        className={`text-white ${size} hover:text-gray-300 transition-colors`}
+      />
+      {userData?.cartItems && userData.cartItems.length > 0 && (
+        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+          {userData.cartItems.length}
+        </span>
+      )}
+    </NavLink>
+  );
 
   return (
     <>
@@ -61,14 +82,12 @@ const Navbar = () => {
         className="shadow z-50 fixed  top-0 left-0 w-full"
         style={{ backgroundColor: "var(--color-primary-dark)" }}
       >
-        
         <div className="flex justify-between  items-center h-16  mx-auto max-w-7xl px-4">
           {/* Logo */}
-          
-          <div 
+
+          <div
             className="flex items-center  cursor-pointer"
             onClick={() => navigate("/")}
-           
           >
             <img
               src={logo}
@@ -77,13 +96,12 @@ const Navbar = () => {
               alt="Logo"
               className="mb-2"
             />
-            <span 
+            <span
               className="text-white text-3xl font-bold"
               style={{ fontFamily: "var(--logo-font)", letterSpacing: "1px" }}
             >
               Roshetta
             </span>
-            
           </div>
 
           {/* Desktop Navigation - shown above 1000px */}
@@ -97,7 +115,11 @@ const Navbar = () => {
                       `text-white px-3 py-2 rounded-md text-sm font-medium relative
                       after:content-[''] after:absolute after:left-0 after:bottom-0 
                       after:h-[2px] after:bg-white after:transition-all after:duration-400 
-                      ${isActive ? 'after:w-full' : 'after:w-0 hover:after:w-full'}`
+                      ${
+                        isActive
+                          ? "after:w-full"
+                          : "after:w-0 hover:after:w-full"
+                      }`
                     }
                   >
                     {item.label}
@@ -107,7 +129,10 @@ const Navbar = () => {
             </ul>
 
             {/* User Profile / Auth */}
-            <div className="ml-4 flex items-center">
+            <div className="ml-4 flex items-center space-x-4">
+              {/* Cart Icon - Desktop */}
+              {token && userData && <CartIcon />}
+
               {token && userData ? (
                 <div className="relative" ref={dropdownRef}>
                   <div
@@ -122,8 +147,10 @@ const Navbar = () => {
                     <span className="ml-2 text-white text-sm font-medium">
                       {userData.name}
                     </span>
-                    <i 
-                      className={`fas fa-chevron-${showDropdown ? 'up' : 'down'} ml-1 text-white text-xs`}
+                    <i
+                      className={`fas fa-chevron-${
+                        showDropdown ? "up" : "down"
+                      } ml-1 text-white text-xs`}
                     ></i>
                   </div>
 
@@ -191,7 +218,11 @@ const Navbar = () => {
                       `text-white px-2 py-1 rounded-md text-xs font-medium relative
                       after:content-[''] after:absolute after:left-0 after:bottom-0 
                       after:h-[2px] after:bg-white after:transition-all after:duration-400 
-                      ${isActive ? 'after:w-full' : 'after:w-0 hover:after:w-full'}`
+                      ${
+                        isActive
+                          ? "after:w-full"
+                          : "after:w-0 hover:after:w-full"
+                      }`
                     }
                   >
                     {item.label}
@@ -206,9 +237,14 @@ const Navbar = () => {
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="text-white px-2 py-1 rounded-md text-xs font-medium"
               >
-                More <i className={`fas fa-chevron-${showDropdown ? 'up' : 'down'} ml-1 text-xs`}></i>
+                More{" "}
+                <i
+                  className={`fas fa-chevron-${
+                    showDropdown ? "up" : "down"
+                  } ml-1 text-xs`}
+                ></i>
               </button>
-              
+
               {showDropdown && (
                 <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                   <div className="py-1">
@@ -227,8 +263,11 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* User Profile / Auth for tablet */}
-            <div className="ml-2 flex items-center">
+            {/* Cart Icon and User Profile / Auth for tablet */}
+            <div className="ml-2 flex items-center space-x-3">
+              {/* Cart Icon - Tablet */}
+              {token && userData && <CartIcon size="text-lg" />}
+
               {token && userData ? (
                 <div className="relative" ref={dropdownRef}>
                   <div
@@ -299,7 +338,10 @@ const Navbar = () => {
           </div>
 
           {/* Mobile menu button - shown below 768px */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center space-x-3">
+            {/* Cart Icon - Mobile (outside hamburger) */}
+            {token && userData && <CartIcon size="text-lg" />}
+
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-white focus:outline-none"
@@ -307,22 +349,32 @@ const Navbar = () => {
               aria-expanded={menuOpen}
             >
               <svg
-                className={`h-6 w-6 ${menuOpen ? 'hidden' : 'block'}`}
+                className={`h-6 w-6 ${menuOpen ? "hidden" : "block"}`}
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
               <svg
-                className={`h-6 w-6 ${menuOpen ? 'block' : 'hidden'}`}
+                className={`h-6 w-6 ${menuOpen ? "block" : "hidden"}`}
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -338,11 +390,13 @@ const Navbar = () => {
         className={`md:hidden fixed inset-0 z-40 transform ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
         } transition-transform duration-300 ease-in-out`}
-        style={{ top: '64px', width: '65%' }}
+        style={{ top: "64px", width: "65%" }}
         ref={mobileMenuRef}
       >
         <div
-          className={`fixed inset-0 bg-black bg-opacity-50 ${menuOpen ? 'block' : 'hidden'}`}
+          className={`fixed inset-0 bg-black bg-opacity-50 ${
+            menuOpen ? "block" : "hidden"
+          }`}
           onClick={() => setMenuOpen(false)}
         ></div>
         <div className="relative flex flex-col w-full h-full bg-[#0097A7] shadow-xl">
@@ -354,13 +408,23 @@ const Navbar = () => {
                   to={item.path}
                   className={({ isActive }) => `
                     group flex items-center px-3 py-3 my-1 text-sm font-medium rounded-md
-                    ${isActive ? 'bg-gray-100 text-gray-900' : 'text-white hover:text-gray-900 hover:bg-gray-100'}
+                    ${
+                      isActive
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-white hover:text-gray-900 hover:bg-gray-100"
+                    }
                   `}
                   onClick={handleNavClick}
                 >
                   {({ isActive }) => (
                     <>
-                      <i className={`fas ${item.icon} mr-3 ${isActive ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500'}`}></i>
+                      <i
+                        className={`fas ${item.icon} mr-3 ${
+                          isActive
+                            ? "text-gray-500"
+                            : "text-gray-400 group-hover:text-gray-500"
+                        }`}
+                      ></i>
                       {item.label}
                     </>
                   )}
@@ -371,10 +435,34 @@ const Navbar = () => {
                 <>
                   <div className="border-t border-gray-200 mt-2 pt-2">
                     <NavLink
+                      to="/cart"
+                      className={({ isActive }) => `
+                        group flex items-center px-3 py-3 text-sm font-medium rounded-md relative
+                        ${
+                          isActive
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-white hover:text-gray-900 hover:bg-gray-100"
+                        }
+                      `}
+                      onClick={handleNavClick}
+                    >
+                      <FiShoppingCart className="mr-3 text-gray-400 group-hover:text-gray-500" />
+                      Cart
+                      {userData.cartItems && userData.cartItems.length > 0 && (
+                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                          {userData.cartItems.length}
+                        </span>
+                      )}
+                    </NavLink>
+                    <NavLink
                       to="/my-profile"
                       className={({ isActive }) => `
                         group flex items-center px-3 py-3 text-sm font-medium rounded-md
-                        ${isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}
+                        ${
+                          isActive
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-white hover:text-gray-900 hover:bg-gray-100"
+                        }
                       `}
                       onClick={handleNavClick}
                     >
@@ -385,7 +473,11 @@ const Navbar = () => {
                       to="/my-appointments"
                       className={({ isActive }) => `
                         group flex items-center px-3 py-3 text-sm font-medium rounded-md
-                        ${isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}
+                        ${
+                          isActive
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-white hover:text-gray-900 hover:bg-gray-100"
+                        }
                       `}
                       onClick={handleNavClick}
                     >
@@ -396,7 +488,11 @@ const Navbar = () => {
                       to="/my-lab-appointments"
                       className={({ isActive }) => `
                         group flex items-center px-3 py-3 text-sm font-medium rounded-md
-                        ${isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}
+                        ${
+                          isActive
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-white hover:text-gray-900 hover:bg-gray-100"
+                        }
                       `}
                       onClick={handleNavClick}
                     >
@@ -407,7 +503,11 @@ const Navbar = () => {
                       to="/my-drug-orders"
                       className={({ isActive }) => `
                         group flex items-center px-3 py-3 text-sm font-medium rounded-md
-                        ${isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}
+                        ${
+                          isActive
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-white hover:text-gray-900 hover:bg-gray-100"
+                        }
                       `}
                       onClick={handleNavClick}
                     >
