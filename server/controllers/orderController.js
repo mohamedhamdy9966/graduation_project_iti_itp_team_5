@@ -1,38 +1,92 @@
 import Drug from "../models/Drug.js";
 import Order from "../models/Order.js";
-import stripe from "stripe";
 import User from "../models/userModel.js";
+import Address from "../models/Address.js"; // Add this import
 import axios from "axios";
 import crypto from "crypto";
 
-// place order COD : /api/oder/cod
+// Place Order COD : /api/order/cod
 export const placeOrderCOD = async (req, res) => {
   try {
     const userId = req.user.id;
     const { items, address } = req.body;
-    if (!address || items.length === 0) {
-      return res.json({ success: false, message: "Invalid Data" });
+
+    console.log("COD Order request:", { userId, items, address });
+
+    if (!address || !items || items.length === 0) {
+      return res.json({
+        success: false,
+        message: "Invalid Data - Missing items or address",
+      });
     }
-    // calculate Amount Using items
-    let amount = await items.reduce(async (acc, item) => {
+
+    // Validate address exists
+    const addressDoc = await Address.findById(address);
+    if (!addressDoc) {
+      return res.json({ success: false, message: "Invalid address selected" });
+    }
+
+    // Validate all drugs exist and calculate amount
+    let amount = 0;
+    const validatedItems = [];
+
+    for (const item of items) {
       const drug = await Drug.findById(item.drug);
-      return (await acc) + drug.offerPrice * item.quantity;
-    }, 0);
-    // add tax Charge (14%)
-    amount += Math.floor(amount * 0);
-    await Order.create({
+      if (!drug) {
+        return res.json({
+          success: false,
+          message: `Drug with ID ${item.drug} not found`,
+        });
+      }
+      if (!drug.inStock) {
+        return res.json({
+          success: false,
+          message: `${drug.name} is currently out of stock`,
+        });
+      }
+
+      const quantity = item.quantity || 1;
+      amount += drug.offerPrice * quantity;
+
+      validatedItems.push({
+        drug: item.drug,
+        quantity: quantity,
+        price: drug.offerPrice,
+        name: drug.name,
+      });
+    }
+
+    // Add tax (0% as per your current setup)
+    const taxAmount = Math.floor(amount * 0);
+    const totalAmount = amount + taxAmount;
+
+    console.log("Order calculation:", { amount, taxAmount, totalAmount });
+
+    // Create order
+    const newOrder = await Order.create({
       userId,
-      items,
-      amount,
+      items: validatedItems,
+      amount: totalAmount,
       address,
       paymentType: "COD",
+      status: "Order Placed",
+      createdAt: new Date(),
     });
-    return res.json({ success: true, message: "Order Placed Successfully" });
+
+    console.log("Order created:", newOrder._id);
+
+    return res.json({
+      success: true,
+      message: "Order Placed Successfully",
+      orderId: newOrder._id,
+    });
   } catch (error) {
+    console.error("COD Order error:", error);
     return res.json({ success: false, message: error.message });
   }
 };
 
+// Helper functions for Paymob
 const getAuthToken = async () => {
   try {
     const rawKey = process.env.PAYMOB_API_KEY;
@@ -53,11 +107,10 @@ const getAuthToken = async () => {
     );
     return response.data.token;
   } catch (error) {
-    console.error("DEBUG: Paymob Auth Error:", {
+    console.error("Paymob Auth Error:", {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
-      headers: error.response?.headers,
     });
     throw new Error(
       `Paymob Auth Token Error: ${
@@ -106,10 +159,10 @@ const getPaymentKey = async (
       billing_data: billingData,
       currency: "EGP",
       integration_id: integrationId,
-      success_url: `${origin}/success`, // Dynamic success URL
-      cancel_url: `${origin}/cancel`, // Dynamic cancel URL
+      success_url: `${origin}/success`,
+      cancel_url: `${origin}/cancel`,
     };
-    console.log("DEBUG: getPaymentKey Payload:", payload);
+
     const response = await axios.post(
       "https://accept.paymobsolutions.com/api/acceptance/payment_keys",
       payload,
@@ -120,14 +173,12 @@ const getPaymentKey = async (
         },
       }
     );
-    console.log("DEBUG: getPaymentKey Response:", response.data);
     return response.data.token;
   } catch (error) {
-    console.error("DEBUG: getPaymentKey Error:", {
+    console.error("getPaymentKey Error:", {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
-      headers: error.response?.headers,
     });
     throw new Error(
       `Paymob get payment key Error: ${
@@ -137,108 +188,143 @@ const getPaymentKey = async (
   }
 };
 
-// Place Order with Paymob
+// Place Order with Paymob : /api/order/paymob
 export const placeOrderPaymob = async (req, res) => {
   try {
     const userId = req.user.id;
     const { items, address, shippingFee } = req.body;
-    const { origin } = req.headers;
+    const origin =
+      req.headers.origin || req.headers.referer || "http://localhost:3000";
 
-    console.log("DEBUG: placeOrderPaymob Input:", {
+    console.log("Paymob Order request:", {
       userId,
       items,
       address,
       shippingFee,
     });
 
-    if (!address || items.length === 0) {
-      return res.json({ success: false, message: "Invalid Data" });
+    if (!address || !items || items.length === 0) {
+      return res.json({
+        success: false,
+        message: "Invalid Data - Missing items or address",
+      });
     }
 
-    // Calculate amount
-    const drugTotals = await Promise.all(
-      items.map(async (item) => {
-        const drug = await Drug.findById(item.drug);
-        if (!drug) throw new Error(`Drug ${item.drug} not found`);
-        return drug.offerPrice * item.quantity;
-      })
-    );
-    let amount = drugTotals.reduce((acc, val) => acc + val, 0);
+    // Validate address
+    const addressDoc = await Address.findById(address);
+    if (!addressDoc) {
+      return res.json({ success: false, message: "Invalid address selected" });
+    }
+
+    // Calculate amount and validate drugs
+    let amount = 0;
+    const validatedItems = [];
+
+    for (const item of items) {
+      const drug = await Drug.findById(item.drug);
+      if (!drug) {
+        return res.json({
+          success: false,
+          message: `Drug with ID ${item.drug} not found`,
+        });
+      }
+      if (!drug.inStock) {
+        return res.json({
+          success: false,
+          message: `${drug.name} is currently out of stock`,
+        });
+      }
+
+      const quantity = item.quantity || 1;
+      amount += drug.offerPrice * quantity;
+
+      validatedItems.push({
+        drug: item.drug,
+        quantity: quantity,
+        price: drug.offerPrice,
+        name: drug.name,
+      });
+    }
+
+    // Add shipping and tax
     amount += shippingFee || 0;
-    amount += Math.floor(amount * 0);
-    amount = Math.floor(amount * 100);
-    console.log("DEBUG: Calculated Amount (cents):", amount);
-    if (amount <= 0) {
+    amount += Math.floor(amount * 0); // 0% tax as per your setup
+
+    const amountCents = Math.floor(amount * 100);
+
+    console.log("Amount calculation:", { amount, amountCents });
+
+    if (amountCents <= 0) {
       throw new Error("Amount must be greater than zero");
     }
 
-    // Create order in DB
+    // Create order in database
     const order = await Order.create({
       userId,
-      items,
-      amount: amount / 100,
+      items: validatedItems,
+      amount: amount,
       address,
       paymentType: "Online",
       status: "Pending Payment",
+      createdAt: new Date(),
     });
-    console.log("DEBUG: Created Order:", order._id);
 
-    // Get user and address for billing data
+    console.log("Order created:", order._id);
+
+    // Get user data for billing
     const user = await User.findById(userId);
-    const addressDoc = await Address.findById(address);
-    if (!addressDoc) throw new Error(`Address ${address} not found`);
-    console.log("DEBUG: User Data:", {
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-    });
-    console.log("DEBUG: Address Data:", addressDoc);
+    if (!user) {
+      throw new Error("User not found");
+    }
 
-    // Paymob Integration
-    const authToken = await getAuthToken();
-    console.log("DEBUG: Auth Token:", authToken);
-    const paymobOrderId = await registerOrder(authToken, amount, order._id);
-    console.log("DEBUG: Paymob Order ID:", paymobOrderId);
-
+    // Prepare billing data
     const billingData = {
-      first_name: addressDoc.firstName || user.name.split(" ")[0] || "Unknown",
-      last_name: addressDoc.lastName || user.name.split(" ")[1] || "Unknown",
-      email: addressDoc.email || user.email || "no-email@domain.com",
+      first_name: addressDoc.firstName || user.name.split(" ")[0] || "Customer",
+      last_name:
+        addressDoc.lastName ||
+        user.name.split(" ").slice(1).join(" ") ||
+        "User",
+      email: addressDoc.email || user.email || "customer@example.com",
       phone_number: addressDoc.phone
         ? `+2${addressDoc.phone}`
-        : user.phone
-        ? `+2${user.phone}`
+        : user.mobile
+        ? `+2${user.mobile}`
         : "+201000000000",
-      street: addressDoc.street || "Unknown",
+      street: addressDoc.street || "Unknown Street",
       building: addressDoc.building || "Unknown",
       floor: addressDoc.floor || "Unknown",
       apartment: addressDoc.apartment || "Unknown",
       city: addressDoc.city || "Cairo",
       state: addressDoc.state || "Cairo",
-      country:
-        addressDoc.country?.toUpperCase() === "EGYPT"
-          ? "EGY"
-          : addressDoc.country || "EGY",
+      country: addressDoc.country?.toUpperCase() === "EGYPT" ? "EGY" : "EGY",
       postal_code: addressDoc.zipcode?.toString() || "00000",
     };
-    console.log("DEBUG: Billing Data:", billingData);
 
+    console.log("Billing data prepared:", billingData);
+
+    // Paymob Integration
+    const authToken = await getAuthToken();
+    const paymobOrderId = await registerOrder(
+      authToken,
+      amountCents,
+      order._id
+    );
     const paymentKey = await getPaymentKey(
       authToken,
-      amount,
+      amountCents,
       paymobOrderId,
       billingData,
       process.env.PAYMOB_INTEGRATION_ID,
       origin
     );
-    console.log("DEBUG: Payment Key:", paymentKey);
 
     const paymentUrl = `https://accept.paymobsolutions.com/api/acceptance/iframes/${process.env.PAYMOB_IFRAME_ID}?payment_token=${paymentKey}`;
-    console.log("DEBUG: Payment URL:", paymentUrl);
+
+    console.log("Payment URL generated:", paymentUrl);
 
     return res.json({ success: true, url: paymentUrl });
   } catch (error) {
-    console.error("DEBUG: placeOrderPaymob Error:", {
+    console.error("Paymob Order error:", {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
@@ -247,33 +333,50 @@ export const placeOrderPaymob = async (req, res) => {
   }
 };
 
-// Paymob Webhook Handler
+// Paymob Webhook Handler : /api/order/paymob-webhook
 export const paymobWebhook = async (req, res) => {
   try {
     // Verify HMAC signature
     const receivedHmac = req.query.hmac;
     const payload = req.body;
-    const secureHash = crypto
-      .createHmac("sha512", process.env.PAYMOB_HMAC_SECRET)
-      .update(JSON.stringify(payload))
-      .digest("hex");
 
-    if (secureHash !== receivedHmac) {
-      console.error("Invalid HMAC signature");
-      return res.status(403).send("Invalid HMAC signature");
+    if (process.env.PAYMOB_HMAC_SECRET) {
+      const secureHash = crypto
+        .createHmac("sha512", process.env.PAYMOB_HMAC_SECRET)
+        .update(JSON.stringify(payload))
+        .digest("hex");
+
+      if (secureHash !== receivedHmac) {
+        console.error("Invalid HMAC signature");
+        return res.status(403).send("Invalid HMAC signature");
+      }
     }
 
     const { obj } = req.body;
     const ourOrderId = obj.order.merchant_order_id;
 
+    console.log(
+      "Webhook received for order:",
+      ourOrderId,
+      "Success:",
+      obj.success
+    );
+
     if (obj.success) {
+      // Payment successful
       await Order.findByIdAndUpdate(ourOrderId, {
         isPaid: true,
         status: "Processing",
+        paidAt: new Date(),
       });
+
+      // Clear user's cart
       const order = await Order.findById(ourOrderId);
-      await User.findByIdAndUpdate(order.userId, { cartItems: {} });
+      if (order) {
+        await User.findByIdAndUpdate(order.userId, { cartItems: {} });
+      }
     } else {
+      // Payment failed
       await Order.findByIdAndUpdate(ourOrderId, {
         status: "Payment Failed",
       });
@@ -286,150 +389,141 @@ export const paymobWebhook = async (req, res) => {
   }
 };
 
-// place order Stripe : /api/oder/cod
-export const placeOrderStripe = async (req, res) => {
-  try {
-    const { userId, items, address } = req.body;
-    const { origin } = req.headers;
-    if (!address || items.length === 0) {
-      return res.json({ success: false, message: "Invalid Data" });
-    }
-    let drugData = [];
-    // calculate Amount Using items
-    let amount = await items.reduce(async (acc, item) => {
-      const drug = await Drug.findById(item.drug);
-      drugData.push({
-        name: drug.name,
-        price: drug.offerPrice,
-        quantity: item.quantity,
-      });
-      return (await acc) + drug.offerPrice * item.quantity;
-    }, 0);
-    // add tax Charge (14%)
-    amount += Math.floor(amount * 0);
-    const order = await Order.create({
-      userId,
-      items,
-      amount,
-      address,
-      paymentType: "Online",
-    });
-    // stripe Gateway Intialize
-    const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
-    // create line items for stripe
-    const line_items = drugData.map((item) => {
-      return {
-        price_data: {
-          currency: "egp",
-          drug_data: {
-            name: item.name,
-          },
-          unit_amount: Math.floor(item.price + item.price * 0.14) * 100,
-        },
-        quantity: item.quantity,
-      };
-    });
-    // create session
-    const session = await stripeInstance.checkout.sessions.create({
-      // payment_method_types: ["card"],
-      line_items,
-      mode: "payment",
-      success_url: `${origin}/success`,
-      cancel_url: `${origin}/cancel`,
-      metadata: {
-        orderId: order._id.toString(),
-        userId,
-      },
-    });
-    return res.json({ success: true, url: session.url });
-  } catch (error) {
-    return res.json({ success: false, message: error.message });
-  }
-};
-
-// stripe webhooks to verify paymens action : /stripe
-export const stripeWebhooks = async (request, response) => {
-  //  Stripe Gateway Initialize
-  const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
-  const sig = request.headers["stripe-signature"];
-  let event;
-  try {
-    event = stripeInstance.webhooks.constructEvent(
-      request.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-  } catch (error) {
-    response.status(400).send(`Webhook Error: ${error.message}`);
-  }
-  // Handle the Event
-  switch (event.type) {
-    case "payment_intent.succeeded": {
-      const paymentIntent = event.data.object;
-      const paymentIntentId = paymentIntent.id;
-      // Getting Session Metadata
-      const session = await stripeInstance.checkout.sessions.list({
-        payment_intent: paymentIntentId,
-      });
-      const { orderId, userId } = session.data[0].metadata;
-      // Mark Payment as paid
-      await Order.findByIdAndUpdate(orderId, { isPaid: true });
-      // clear user cart
-      await User.findByIdAndUpdate(userId, { cartItems: {} });
-      break;
-    }
-    case "payment_intent.payment_failed": {
-      const paymentIntent = event.data.object;
-      const paymentIntentId = paymentIntent.id;
-      // getting session metadata
-      const session = await stripeInstance.checkout.sessions.list({
-        payment_intent: paymentIntentId,
-      });
-      const { orderId } = session.data[0].metadata;
-      await Order.findByIdAndDelete(orderId);
-      break;
-    }
-    default:
-      console.error(`Unhandled event type ${event.type}`);
-      break;
-  }
-  response.json({ received: true });
-};
-
-// Get orders by user id : /api/order/user
+// Get User Orders : /api/order/user
 export const getUserOrders = async (req, res) => {
   try {
     const userId = req.user.id;
+
     const orders = await Order.find({
       userId,
       $or: [{ paymentType: "COD" }, { isPaid: true }],
     })
-      .populate("items.drug address")
+      .populate({
+        path: "items.drug",
+        select: "name image category offerPrice",
+      })
+      .populate({
+        path: "address",
+        select: "street city state country",
+      })
       .sort({ createdAt: -1 });
-    res.json({ success: true, orders });
+
+    // Transform orders for frontend
+    const transformedOrders = orders.map((order) => ({
+      ...order._doc,
+      items: order.items.map((item) => ({
+        ...item,
+        drug: item.drug || {
+          name: "Product Not Found",
+          image: ["/placeholder-drug.png"],
+          category: "Medicine",
+          offerPrice: 0,
+        },
+      })),
+    }));
+
+    res.json({ success: true, orders: transformedOrders });
   } catch (error) {
+    console.error("getUserOrders error:", error);
     return res.json({ success: false, message: error.message });
   }
 };
 
-// get all orders (for seller - admin) : /api/order/seller
+// Get All Orders (Admin) : /api/order/all
 export const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find({
       $or: [{ paymentType: "COD" }, { isPaid: true }],
     })
-      .populate("items.drug")
-      .populate("address")
+      .populate({
+        path: "items.drug",
+        select: "name image category offerPrice",
+      })
+      .populate({
+        path: "address",
+        select: "street city state country firstName lastName phone",
+      })
+      .populate({
+        path: "userId",
+        select: "name email mobile",
+      })
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ success: true, orders });
+    // Transform orders for admin panel
+    const transformedOrders = orders.map((order) => ({
+      ...order._doc,
+      items: order.items.map((item) => ({
+        ...item,
+        drug: item.drug || {
+          name: "Product Not Found",
+          image: ["/placeholder-drug.png"],
+          category: "Medicine",
+          offerPrice: 0,
+        },
+      })),
+      customerInfo: order.userId
+        ? {
+            name: order.userId.name,
+            email: order.userId.email,
+            mobile: order.userId.mobile,
+          }
+        : null,
+    }));
+
+    return res.status(200).json({ success: true, orders: transformedOrders });
   } catch (error) {
     console.error("getAllOrders error:", error);
     if (!res.headersSent) {
       return res.status(500).json({ success: false, message: error.message });
-    } else {
-      // Log or end silently to prevent crashing
-      console.warn("Headers already sent, cannot respond again.");
     }
+  }
+};
+
+// Update Order Status (Admin) : /api/order/status
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { orderId, status } = req.body;
+
+    if (!orderId || !status) {
+      return res.json({
+        success: false,
+        message: "Order ID and status are required",
+      });
+    }
+
+    const validStatuses = [
+      "Order Placed",
+      "Processing",
+      "Shipped",
+      "Out for Delivery",
+      "Delivered",
+      "Cancelled",
+    ];
+    if (!validStatuses.includes(status)) {
+      return res.json({ success: false, message: "Invalid status" });
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      {
+        status,
+        updatedAt: new Date(),
+        ...(status === "Delivered" && { deliveredAt: new Date() }),
+      },
+      { new: true }
+    );
+
+    if (!updatedOrder) {
+      return res.json({ success: false, message: "Order not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Order status updated successfully",
+      order: updatedOrder,
+    });
+  } catch (error) {
+    console.error("updateOrderStatus error:", error);
+    res.json({ success: false, message: error.message });
   }
 };
