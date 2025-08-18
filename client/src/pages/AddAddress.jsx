@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
 import { Helmet } from "react-helmet";
 
-const InputField = ({ type, placeholder, name, handleChange, address }) => (
+const InputField = ({
+  type,
+  placeholder,
+  name,
+  handleChange,
+  address,
+  inputMode,
+}) => (
   <input
     className="w-full px-2 py-2.5 border border-gray-500/30 rounded outline-none text-gray-500 focus:border-primary transition"
     type={type}
@@ -12,6 +20,7 @@ const InputField = ({ type, placeholder, name, handleChange, address }) => (
     onChange={handleChange}
     name={name}
     value={address[name]}
+    inputMode={inputMode}
     required
   />
 );
@@ -49,7 +58,8 @@ const AddAddress = () => {
     { name: "October", fee: 60 },
   ];
 
-  const { axios, user, navigate } = useAppContext();
+  const { axios, user, userToken } = useAppContext();
+  const navigate = useNavigate();
   const [address, setAddress] = useState({
     firstName: "",
     lastName: "",
@@ -58,9 +68,13 @@ const AddAddress = () => {
     city: "",
     state: "",
     zipcode: "",
-    country: "",
+    country: "Egypt",
     phone: "",
+    building: "",
+    floor: "",
+    apartment: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,13 +86,51 @@ const AddAddress = () => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+
+    if (!user || !userToken) {
+      toast.error("Please log in to add an address");
+      return;
+    }
+
+    // Validation
+    if (
+      !address.firstName ||
+      !address.lastName ||
+      !address.email ||
+      !address.street ||
+      !address.city ||
+      !address.state ||
+      !address.phone
+    ) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Validate phone number (should be Egyptian number)
+    const phoneRegex = /^(010|011|012|015)[0-9]{8}$/;
+    if (!phoneRegex.test(address.phone)) {
+      toast.error(
+        "Please enter a valid Egyptian mobile number (e.g., 01012345678)"
+      );
+      return;
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(address.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      const token = localStorage.getItem("userToken");
       const { data } = await axios.post(
         "/api/address/add",
         { address },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${userToken}` } }
       );
+
       if (data.success) {
         toast.success(data.message);
         navigate("/cart");
@@ -86,15 +138,26 @@ const AddAddress = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.message);
+      console.error("Add address error:", error);
+      toast.error(error.response?.data?.message || "Failed to add address");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!user) {
-      navigate("/cart");
+    if (!user || !userToken) {
+      toast.error("Please log in to add an address");
+      navigate("/login");
     }
-  }, []);
+  }, [user, userToken, navigate]);
+
+  // Pre-fill email from user data if available
+  useEffect(() => {
+    if (user && user.email && !address.email) {
+      setAddress((prev) => ({ ...prev, email: user.email }));
+    }
+  }, [user]);
 
   return (
     <div className="mt-16 pb-16">
@@ -113,9 +176,11 @@ const AddAddress = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="canonical" href="https://www.kamma-pharma.com/add-address" />
       </Helmet>
+
       <p className="text-2xl md:text-3xl text-gray-500">
         Add Shipping <span className="font-semibold text-primary">Address</span>
       </p>
+
       <div className="flex flex-col-reverse md:flex-row justify-between mt-10">
         <div className="flex-1 max-w-md">
           <form onSubmit={onSubmitHandler} className="space-y-3 mt-6 text-sm">
@@ -125,37 +190,67 @@ const AddAddress = () => {
                 address={address}
                 name="firstName"
                 type="text"
-                placeholder="First Name"
+                placeholder="First Name *"
               />
               <InputField
                 handleChange={handleChange}
                 address={address}
                 name="lastName"
                 type="text"
-                placeholder="Last Name"
+                placeholder="Last Name *"
               />
             </div>
+
             <InputField
               handleChange={handleChange}
               address={address}
               name="email"
               type="email"
-              placeholder="Email Address"
+              placeholder="Email Address *"
             />
+
             <InputField
               handleChange={handleChange}
               address={address}
               name="street"
               type="text"
-              placeholder="Street"
+              placeholder="Street Address *"
             />
+
+            <div className="grid grid-cols-3 gap-4">
+              <InputField
+                handleChange={handleChange}
+                address={address}
+                name="building"
+                type="text"
+                placeholder="Building"
+                inputMode="numeric"
+              />
+              <InputField
+                handleChange={handleChange}
+                address={address}
+                name="floor"
+                type="text"
+                placeholder="Floor"
+                inputMode="numeric"
+              />
+              <InputField
+                handleChange={handleChange}
+                address={address}
+                name="apartment"
+                type="text"
+                placeholder="Apartment"
+                inputMode="numeric"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <InputField
                 handleChange={handleChange}
                 address={address}
                 name="city"
                 type="text"
-                placeholder="City"
+                placeholder="City *"
               />
               <select
                 name="state"
@@ -164,7 +259,7 @@ const AddAddress = () => {
                 className="w-full px-2 py-2.5 border border-gray-500/30 rounded outline-none text-gray-500 focus:border-primary transition"
                 required
               >
-                <option value="">Select State</option>
+                <option value="">Select State *</option>
                 {states.map((item, idx) => (
                   <option key={idx} value={item.name}>
                     {item.name} (+{item.fee} EGP)
@@ -172,6 +267,7 @@ const AddAddress = () => {
                 ))}
               </select>
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <InputField
                 handleChange={handleChange}
@@ -186,25 +282,36 @@ const AddAddress = () => {
                 address={address}
                 name="country"
                 type="text"
-                placeholder="Country"
+                placeholder="Country *"
               />
             </div>
+
             <InputField
               handleChange={handleChange}
               address={address}
               name="phone"
-              type="text"
+              type="tel"
               inputMode="numeric"
-              placeholder="Phone"
+              placeholder="Phone Number (01012345678) *"
             />
-            <button className="w-full mt-6 bg-primary text-white py-3 hover:bg-primary-dull transition cursor-pointer uppercase">
-              Save Address
+
+            <p className="text-xs text-gray-500 mt-2">
+              * Required fields. Phone number should be Egyptian mobile number.
+            </p>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full mt-6 bg-primary text-white py-3 hover:bg-primary-dull transition cursor-pointer uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Saving..." : "Save Address"}
             </button>
           </form>
         </div>
+
         <img
-          className="md:mr-16 mb-16 md:mt-0"
-          src={assets.add_address_iamge}
+          className="md:mr-16 mb-16 md:mt-0 max-w-sm"
+          src={assets.add_address_image}
           alt="add address"
         />
       </div>

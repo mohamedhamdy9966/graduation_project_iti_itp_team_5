@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
-import { assets } from "../../assets/assets";
+import { assets } from "../../../../client/src/assets/assets_admin/assets";
 import toast from "react-hot-toast";
 import { Helmet } from "react-helmet";
 

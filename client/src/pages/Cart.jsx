@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import toast from "react-hot-toast";
@@ -6,20 +7,21 @@ import { Helmet } from "react-helmet";
 
 const Cart = () => {
   const {
-    drugs, // Changed from products to drugs
+    drugs,
     currency,
     cartItems,
     removeFromCart,
     updateCartItem,
-    navigate,
     getCartAmount,
     getCartCount,
     axios,
     user,
+    userToken,
     setCartItems,
     setShowUserLogin,
   } = useAppContext();
 
+  const navigate = useNavigate();
   const [cartArray, setCartArray] = useState([]);
   const [cartAddresses, setAddresses] = useState([]);
   const [showAddress, setShowAddress] = useState(false);
@@ -41,11 +43,10 @@ const Cart = () => {
 
   const getUserAddress = async () => {
     try {
-      const token = localStorage.getItem("userToken");
-      if (!token) return;
+      if (!userToken || !user) return;
 
       const { data } = await axios.get("/api/address/get", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${userToken}` },
       });
       if (data.success) {
         setAddresses(data.addresses);
@@ -71,7 +72,7 @@ const Cart = () => {
       Dakahlia: 40,
       Sharqia: 70,
       Qalyubia: 60,
-      KafrElSheikh: 40,
+      "Kafr El Sheikh": 40,
       Gharbia: 30,
       Monufia: 50,
       Beheira: 65,
@@ -98,11 +99,11 @@ const Cart = () => {
 
   const cartAmount = getCartAmount();
   const shipping = getShippingFee();
-  const tax = 0; // Tax is 0% as per your controller
+  const tax = 0;
   const totalAmountTaxShipping = cartAmount + shipping + tax;
 
   const placeOrder = async () => {
-    if (!user) {
+    if (!user || !userToken) {
       toast.error("Please log in to place an order");
       setShowUserLogin(true);
       return;
@@ -119,12 +120,11 @@ const Cart = () => {
     }
 
     setIsLoading(true);
-    const token = localStorage.getItem("userToken");
 
     try {
-      // Prepare order items - matching your orderController structure
+      // Prepare order items
       const orderItems = cartArray.map((item) => ({
-        drug: item._id, // Changed from product to drug
+        drug: item._id,
         quantity: item.quantity,
       }));
 
@@ -135,7 +135,7 @@ const Cart = () => {
             items: orderItems,
             address: selectedAddress._id,
           },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${userToken}` } }
         );
 
         if (data.success) {
@@ -156,8 +156,7 @@ const Cart = () => {
           },
           {
             headers: {
-              Authorization: `Bearer ${token}`,
-              origin: window.location.origin,
+              Authorization: `Bearer ${userToken}`,
             },
           }
         );
@@ -185,16 +184,16 @@ const Cart = () => {
   }, [drugs, cartItems]);
 
   useEffect(() => {
-    if (user) {
+    if (user && userToken) {
       getUserAddress();
     }
-  }, [user]);
+  }, [user, userToken]);
 
   // Show loading or empty state
   if (!drugs || drugs.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p className="text-gray-500">Loading drugs...</p>
+        <p className="text-gray-500">Loading products...</p>
       </div>
     );
   }
@@ -206,7 +205,7 @@ const Cart = () => {
         <button
           onClick={() => {
             navigate("/drugs");
-            scrollTo(0, 0);
+            window.scrollTo(0, 0);
           }}
           className="bg-primary text-white px-6 py-3 rounded hover:bg-primary-dull transition"
         >
@@ -242,7 +241,7 @@ const Cart = () => {
         </h1>
 
         <div className="hidden md:grid grid-cols-[2fr_1fr_1fr] text-gray-500 text-base font-medium pb-3 border-b">
-          <p className="text-left">Drug Details</p>
+          <p className="text-left">Product Details</p>
           <p className="text-center">Subtotal</p>
           <p className="text-center">Action</p>
         </div>
@@ -253,12 +252,12 @@ const Cart = () => {
               key={index}
               className="flex md:grid md:grid-cols-[2fr_1fr_1fr] text-gray-700 items-center p-4 md:p-0 md:py-4 border-b border-gray-200 gap-4"
             >
-              {/* Drug Details */}
+              {/* Product Details */}
               <div className="flex items-center gap-4 flex-1 md:flex-none">
                 <div
                   onClick={() => {
                     navigate(`/drugs/${drug._id}`);
-                    scrollTo(0, 0);
+                    window.scrollTo(0, 0);
                   }}
                   className="cursor-pointer w-20 h-20 md:w-24 md:h-24 flex items-center justify-center border border-gray-300 rounded bg-white"
                 >
@@ -341,7 +340,7 @@ const Cart = () => {
         <button
           onClick={() => {
             navigate("/drugs");
-            scrollTo(0, 0);
+            window.scrollTo(0, 0);
           }}
           className="group cursor-pointer flex items-center mt-8 gap-2 text-primary font-medium hover:text-primary-dull transition"
         >

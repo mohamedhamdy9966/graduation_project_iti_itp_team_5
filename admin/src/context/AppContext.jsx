@@ -1,5 +1,6 @@
-import { createContext } from "react";
-import validator from 'validator'
+import { createContext, useContext } from "react";
+import validator from "validator";
+import axios from "axios"; // Add axios import
 
 export const AppContext = createContext();
 
@@ -47,10 +48,19 @@ const AppContextProvider = (props) => {
       dateArray[0] + " " + months[Number(dateArray[1])] + " " + dateArray[2]
     );
   };
-  const value = { calculateAge, slotDateFormat, currency };
+  const value = { calculateAge, slotDateFormat, currency, axios }; // Add axios to context value
+
   return (
     <AppContext.Provider value={value}>{props.children}</AppContext.Provider>
   );
+};
+
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error("useAppContext must be used within an AppContextProvider");
+  }
+  return context;
 };
 
 export default AppContextProvider;

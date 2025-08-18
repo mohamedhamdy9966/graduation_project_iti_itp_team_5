@@ -2,9 +2,18 @@ import React from "react";
 import { useContext } from "react";
 import { AdminContext } from "../context/AdminContext";
 import { NavLink } from "react-router-dom";
-import { assets } from "../../../client/src/assets/assets_admin/assets";
 import { DoctorContext } from "../context/DoctorContext";
 import { LabContext } from "../context/LabContext";
+import {
+  FiHome,
+  FiCalendar,
+  FiPlusCircle,
+  FiUsers,
+  FiShoppingBag,
+  FiUser,
+} from "react-icons/fi";
+import { GiHealthPotion } from "react-icons/gi";
+import { FaPills } from "react-icons/fa";
 
 const Sidebar = () => {
   const { aToken } = useContext(AdminContext);
@@ -26,7 +35,7 @@ const Sidebar = () => {
               }
               to={"/admin-dashboard"}
             >
-              <img src={assets.home_icon} alt="dashboard" className="w-5 h-5" />
+              <FiHome className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Dashboard
               </span>
@@ -42,11 +51,7 @@ const Sidebar = () => {
               }
               to={"/all-appointments"}
             >
-              <img
-                src={assets.appointment_icon}
-                alt="appointments"
-                className="w-5 h-5"
-              />
+              <FiCalendar className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Appointments
               </span>
@@ -62,7 +67,7 @@ const Sidebar = () => {
               }
               to={"add-doctor"}
             >
-              <img src={assets.add_icon} alt="add doctor" className="w-5 h-5" />
+              <FiPlusCircle className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Add Doctor
               </span>
@@ -78,7 +83,7 @@ const Sidebar = () => {
               }
               to={"add-lab"}
             >
-              <img src={assets.add_icon} alt="add lab" className="w-5 h-5" />
+              <FiPlusCircle className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Add Lab
               </span>
@@ -92,13 +97,25 @@ const Sidebar = () => {
                     : ""
                 }`
               }
+              to={"/add-drug"}
+            >
+              <FiPlusCircle className="w-5 h-5 text-[#515151]" />
+              <span className="hidden md:block text-sm md:text-base">
+                Add Drug
+              </span>
+            </NavLink>
+
+            <NavLink
+              className={({ isActive }) =>
+                `flex items-center gap-3 py-3.5 px-4 md:px-6 hover:bg-[#f2f3ff] transition-colors duration-200 ${
+                  isActive
+                    ? "bg-[#f2f3ff] border-r-4 border-blue-500 font-medium"
+                    : ""
+                }`
+              }
               to={"/doctor-list"}
             >
-              <img
-                src={assets.people_icon}
-                alt="doctor list"
-                className="w-5 h-5"
-              />
+              <FiUsers className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Doctor List
               </span>
@@ -114,13 +131,41 @@ const Sidebar = () => {
               }
               to={"/lab-list"}
             >
-              <img
-                src={assets.people_icon}
-                alt="doctor list"
-                className="w-5 h-5"
-              />
+              <GiHealthPotion className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Lab List
+              </span>
+            </NavLink>
+
+            <NavLink
+              className={({ isActive }) =>
+                `flex items-center gap-3 py-3.5 px-4 md:px-6 hover:bg-[#f2f3ff] transition-colors duration-200 ${
+                  isActive
+                    ? "bg-[#f2f3ff] border-r-4 border-blue-500 font-medium"
+                    : ""
+                }`
+              }
+              to={"/drug-list"}
+            >
+              <FaPills className="w-5 h-5 text-[#515151]" />
+              <span className="hidden md:block text-sm md:text-base">
+                Drugs List
+              </span>
+            </NavLink>
+
+            <NavLink
+              className={({ isActive }) =>
+                `flex items-center gap-3 py-3.5 px-4 md:px-6 hover:bg-[#f2f3ff] transition-colors duration-200 ${
+                  isActive
+                    ? "bg-[#f2f3ff] border-r-4 border-blue-500 font-medium"
+                    : ""
+                }`
+              }
+              to={"/all-orders"}
+            >
+              <FiShoppingBag className="w-5 h-5 text-[#515151]" />
+              <span className="hidden md:block text-sm md:text-base">
+                Orders
               </span>
             </NavLink>
           </ul>
@@ -138,7 +183,7 @@ const Sidebar = () => {
               }
               to={"/doctor-dashboard"}
             >
-              <img src={assets.home_icon} alt="dashboard" className="w-5 h-5" />
+              <FiHome className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Dashboard
               </span>
@@ -154,11 +199,7 @@ const Sidebar = () => {
               }
               to={"/doctor-appointments"}
             >
-              <img
-                src={assets.appointment_icon}
-                alt="appointments"
-                className="w-5 h-5"
-              />
+              <FiCalendar className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Appointments
               </span>
@@ -174,7 +215,7 @@ const Sidebar = () => {
               }
               to={"/doctor-profile"}
             >
-              <img src={assets.people_icon} alt="profile" className="w-5 h-5" />
+              <FiUser className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Profile
               </span>
@@ -194,7 +235,7 @@ const Sidebar = () => {
               }
               to={"/lab-dashboard"}
             >
-              <img src={assets.home_icon} alt="dashboard" className="w-5 h-5" />
+              <FiHome className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Dashboard
               </span>
@@ -210,11 +251,7 @@ const Sidebar = () => {
               }
               to={"/lab-appointments"}
             >
-              <img
-                src={assets.appointment_icon}
-                alt="appointments"
-                className="w-5 h-5"
-              />
+              <FiCalendar className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Appointments
               </span>
@@ -230,7 +267,7 @@ const Sidebar = () => {
               }
               to={"/lab-profile"}
             >
-              <img src={assets.people_icon} alt="profile" className="w-5 h-5" />
+              <FiUser className="w-5 h-5 text-[#515151]" />
               <span className="hidden md:block text-sm md:text-base">
                 Profile
               </span>
