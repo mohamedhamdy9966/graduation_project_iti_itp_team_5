@@ -1,5 +1,9 @@
 import appointment_img from "./appointment_img.png";
 import header_img from "./header_img.png";
+import header_lab from "./header_lab.png";
+import header_psychology from "./header_psychology.png";
+import header_pharmacy from "./header_pharmacy.png";
+import header_nutrition from "./header_nutrion.png";
 import group_profiles from "./group_profiles.png";
 import profile_pic from "./profile_pic.png";
 import contact_image from "./contact_image.png";
@@ -15,6 +19,8 @@ import arrow_icon from "./arrow_icon.svg";
 import info_icon from "./info_icon.svg";
 import upload_icon from "./upload_icon.png";
 import stripe_logo from "./stripe_logo.png";
+import paymob_logo from "./paymob.png";
+import roshetta_home from "./roshetta_home.mp4"
 import doc1 from "./doc1.png";
 import doc2 from "./doc2.png";
 import doc3 from "./doc3.png";
@@ -28,7 +34,12 @@ import Pediatricians from "./Pediatricians.svg";
 
 export const assets = {
   appointment_img,
+  roshetta_home,
   header_img,
+  header_lab,
+  header_psychology,
+  header_pharmacy,
+  header_nutrition,
   group_profiles,
   logo,
   roshettaLogo,
@@ -44,6 +55,7 @@ export const assets = {
   dropdown_icon,
   upload_icon,
   stripe_logo,
+  paymob_logo
 };
 
 export const specialtyData = [
