@@ -1,14 +1,10 @@
 import express from "express";
 import authUser from "../middlewares/authUser.js";
 import authAdmin from "../middlewares/authAdmin.js";
-import {
-  getAllOrders,
-  getUserOrders,
-  placeOrderCOD,
-  placeOrderPaymob,
-  paymobWebhook,
-  updateOrderStatus,
-} from "../controllers/orderController.js";
+import { placeOrderCOD } from "../controllers/codOrderController.js";
+import { paymobWebhook, placeOrderPaymob } from "../controllers/paymobOrderController.js";
+import { getUserOrders } from "../controllers/userOrderController.js";
+import { getAllOrders, updateOrderStatus } from "../controllers/adminOrderController.js";
 
 const orderRouter = express.Router();
 
