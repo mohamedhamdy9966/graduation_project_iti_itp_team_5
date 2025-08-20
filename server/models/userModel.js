@@ -30,8 +30,8 @@ const userSchema = new mongoose.Schema(
     verifyOtpExpireAt: { type: Number, default: 0 },
     isAccountVerified: { type: Boolean, default: false },
     resetOtp: { type: String, default: "" },
-    resetOtpExpireAt: { type: Number, default: "" },
-    cartItems: { type: Object, default: {} },
+    resetOtpExpireAt: { type: Number, default: 0 },
+    cart: [{ type: mongoose.Schema.Types.ObjectId, ref: "Drug" }], // Assuming cart references Drug model
     bloodType: { type: String, default: "" },
     medicalInsurance: { type: String, default: "" },
     image: {
@@ -56,7 +56,64 @@ const userSchema = new mongoose.Schema(
       ],
       default: [],
     },
-    cart:[],
+    diseases: [
+      {
+        name: { type: String, required: true }, // e.g., "Diabetes", "Hypertension"
+        diagnosedDate: { type: Date, default: Date.now },
+        status: {
+          type: String,
+          enum: ["Active", "Recovered", "Chronic"],
+          default: "Active",
+        },
+        notes: { type: String, default: "" }, // Additional details
+      },
+    ],
+    drugs: [
+      {
+        name: { type: String, required: true }, // e.g., "Metformin"
+        dosage: { type: String, default: "" }, // e.g., "500mg"
+        frequency: { type: String, default: "" }, // e.g., "Twice daily"
+        prescribedDate: { type: Date, default: Date.now },
+        status: {
+          type: String,
+          enum: ["Active", "Discontinued"],
+          default: "Active",
+        },
+      },
+    ],
+    medicalRecord: [
+      {
+        recordType: {
+          type: String,
+          enum: ["Diagnosis", "Lab Result", "Surgery", "Consultation", "Other"],
+          required: true,
+        },
+        date: { type: Date, default: Date.now },
+        description: { type: String, default: "" },
+        doctor: { type: String, default: "" }, // Doctor's name or ID
+        fileUrl: { type: String, default: "" }, // URL to attached file (if any)
+      },
+    ],
+    prescriptions: [
+      {
+        drugName: { type: String, required: true }, // e.g., "Ibuprofen"
+        dosage: { type: String, default: "" }, // e.g., "200mg"
+        frequency: { type: String, default: "" }, // e.g., "Every 6 hours"
+        prescribedBy: { type: String, default: "" }, // Doctor's name or ID
+        dateIssued: { type: Date, default: Date.now },
+        fileUrl: { type: String, default: "" }, // URL to prescription document
+      },
+    ],
+    reports: [
+      {
+        testName: { type: String, required: true }, // e.g., "Blood Glucose", "CBC"
+        result: { type: String, default: "" }, // e.g., "120 mg/dL"
+        referenceRange: { type: String, default: "" }, // e.g., "70-100 mg/dL"
+        analyzedBy: { type: String, default: "" }, // Lab name or ID
+        dateAnalyzed: { type: Date, default: Date.now },
+        fileUrl: { type: String, default: "" }, // URL to lab report document
+      },
+    ],
   },
   { timestamps: true }
 );
