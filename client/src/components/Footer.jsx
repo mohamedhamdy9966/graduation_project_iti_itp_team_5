@@ -40,7 +40,7 @@ const Footer = () => {
               >
                 Roshetta
               </span>
-              {/* <MdHealthAndSafety className="text-2xl text-white" /> */}
+            
             </div>
             <p className="text-white text-opacity-90 leading-relaxed mb-4">
               Roshetta is your trusted platform to easily find and book
