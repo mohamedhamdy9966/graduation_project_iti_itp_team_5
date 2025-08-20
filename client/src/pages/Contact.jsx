@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet";
-import { assets } from "../assets/assets_frontend/assets";
+import { assets } from "../assets/assets";
 
 const Contact = () => {
   return (

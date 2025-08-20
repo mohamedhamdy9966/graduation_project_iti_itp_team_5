@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import { Helmet } from "react-helmet";
 import { AppContext } from "../context/AppContext";
-import { assets } from "../assets/assets_frontend/assets";
+import { assets } from "../assets/assets";
 import axios from "axios";
 import { toast } from "react-toastify";
 

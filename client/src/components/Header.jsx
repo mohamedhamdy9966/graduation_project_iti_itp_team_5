@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { FaCalendarAlt, FaPhoneAlt, FaArrowRight } from "react-icons/fa";
 import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { assets } from "../assets/assets_frontend/assets";
+import { assets } from "../assets/assets";
 
 const Header = () => {
   const controls = useAnimation();

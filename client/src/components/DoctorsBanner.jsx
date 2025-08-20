@@ -1,6 +1,6 @@
 import React from "react";
 import { Helmet } from "react-helmet";
-import { assets } from "../assets/assets_frontend/assets";
+import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
 
 const DoctorsBanner = () => {

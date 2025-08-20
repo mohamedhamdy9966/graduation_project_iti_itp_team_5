@@ -1,6 +1,6 @@
 import React from "react";
 import { Helmet } from "react-helmet";
-import { specialtyData } from "../assets/assets_frontend/assets";
+import { specialtyData } from "../assets/assets";
 import { Link } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { motion } from "framer-motion";

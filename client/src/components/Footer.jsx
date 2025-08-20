@@ -157,7 +157,7 @@ const Footer = () => {
       </div>
 
       {/* Social Icons Style */}
-      <style jsx>{`
+      <style jsx="true">{`
         .social-icon {
           display: flex;
           align-items: center;
