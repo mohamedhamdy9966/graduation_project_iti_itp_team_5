@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
-import { assets } from "../assets/assets";
+// import { logo } from "../assets/assets";
 import logo from "../assets/logo8.png";
 import { AppContext } from "../context/AppContext";
 import axios from "axios";

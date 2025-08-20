@@ -16,6 +16,7 @@ import DrugRouter from "./routes/DrugRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import addressRouter from "./routes/addressRoute.js";
 import orderRouter from "./routes/orderRoute.js";
+import MongoStore from "connect-mongo";
 
 // app config
 const app = express();
@@ -23,13 +24,21 @@ const port = process.env.PORT || 4000;
 connectDB();
 connectCloudinary();
 
-// Session middleware
+// Session middleware with MongoStore
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-session-secret",
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === "production" },
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGODB_URL,  // Use your MongoDB connection string
+      ttl: 1 * 24 * 60 * 60,  // Session TTL (e.g., 1 day in seconds)
+      autoRemove: 'native'  // Automatically remove expired sessions
+    }),
+    cookie: { 
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 14 * 24 * 60 * 60 * 1000  // Match TTL in milliseconds
+    },
   })
 );
 
