@@ -23,7 +23,6 @@ const MyProfile = () => {
       formData.append("medicalInsurance", userData.medicalInsurance);
       formData.append("allergy", JSON.stringify(userData.allergy || {}));
 
-      // Fixed: Change "image" to "imageProfile" to match backend expectation
       if (image) {
         formData.append("imageProfile", image);
       }
@@ -53,9 +52,19 @@ const MyProfile = () => {
     }
   };
 
+  // دالة لتوليد الأحرف الأولى من الاسم للصورة الافتراضية
+  const getInitials = (name) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     userData && (
-      <div className="max-w-3xl mx-auto p-6 sm:p-8 bg-white rounded-2xl shadow-xl border border-indigo-100 mt-8 mb-12">
+      <div className="max-w-3xl mx-auto p-6 sm:p-8 bg-white rounded-2xl shadow-xl border border-[#B2EBF2] mt-8 mb-12">
         <Helmet>
           <title>My Profile - Your Healthcare Platform</title>
           <meta
@@ -86,19 +95,26 @@ const MyProfile = () => {
           <meta property="og:image" content={userData.image} />
         </Helmet>
         <div className="space-y-8">
-          <div className="flex flex-col sm:flex-row items-center gap-6 bg-gradient-to-r from-indigo-50 to-white p-6 rounded-xl">
+          {/* قسم الصورة والاسم */}
+          <div className="flex flex-col sm:flex-row items-center gap-6 bg-gradient-to-r from-[#B2EBF2] to-white p-6 rounded-xl">
             <div className="relative group">
               {isEdit ? (
                 <label htmlFor="image" className="cursor-pointer">
-                  <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-indigo-200 shadow-md">
-                    <img
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      src={image ? URL.createObjectURL(image) : userData.image}
-                      alt="Profile"
-                    />
-                    <div className="absolute inset-0 bg-indigo-600 bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-[#B2EBF2] shadow-md">
+                    {image || userData.image ? (
                       <img
-                        className="w-8 h-8"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        src={image ? URL.createObjectURL(image) : userData.image}
+                        alt="Profile"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-[#00BCD4] text-white text-4xl font-bold">
+                        {getInitials(userData.name)}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-[#0097A7] bg-opacity-70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <img
+                        className="w-8 h-8 invert"
                         src={assets.upload_icon}
                         alt="Upload icon"
                       />
@@ -113,11 +129,19 @@ const MyProfile = () => {
                   />
                 </label>
               ) : (
-                <img
-                  className="w-32 h-32 rounded-full object-cover border-4 border-indigo-200 shadow-md transition-transform duration-300 hover:scale-105"
-                  src={userData.image}
-                  alt="Profile"
-                />
+                <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-[#B2EBF2] shadow-md">
+                  {userData.image ? (
+                    <img
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                      src={userData.image}
+                      alt="Profile"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-[#00BCD4] text-white text-4xl font-bold">
+                      {getInitials(userData.name)}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
             <div className="flex-1 text-center sm:text-left">
@@ -128,30 +152,31 @@ const MyProfile = () => {
                   onChange={(e) =>
                     setUserData((prev) => ({ ...prev, name: e.target.value }))
                   }
-                  className="text-3xl font-bold text-indigo-900 bg-indigo-50/50 p-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                  className="text-3xl font-bold text-[#009688] bg-white p-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-[#00BCD4] transition-all duration-200"
                 />
               ) : (
-                <h2 className="text-3xl font-bold text-indigo-900">
+                <h2 className="text-3xl font-bold text-[#009688]">
                   {userData.name}
                 </h2>
               )}
-              <p className="text-indigo-600 mt-1">{userData.email}</p>
+              <p className="text-[#00BCD4] mt-1">{userData.email}</p>
             </div>
           </div>
 
-          <hr className="border-indigo-100" />
+          <hr className="border-[#B2EBF2]" />
 
+          {/* معلومات الاتصال */}
           <div>
-            <h3 className="text-xl font-semibold text-indigo-900 mb-4">
+            <h3 className="text-xl font-semibold text-[#009688] mb-4 border-b-2 border-[#B2EBF2] pb-2">
               Contact Information
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-indigo-800">
-              <label className="font-semibold text-sm">Email:</label>
-              <p className="sm:col-span-2 text-indigo-600 font-medium">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-[#212121]">
+              <label className="font-semibold text-sm text-[#757575]">Email:</label>
+              <p className="sm:col-span-2 text-[#212121] font-medium">
                 {userData.email}
               </p>
 
-              <label className="font-semibold text-sm">Phone:</label>
+              <label className="font-semibold text-sm text-[#757575]">Phone:</label>
               {isEdit ? (
                 <input
                   type="tel"
@@ -159,16 +184,16 @@ const MyProfile = () => {
                   onChange={(e) =>
                     setUserData((prev) => ({ ...prev, mobile: e.target.value }))
                   }
-                  className="sm:col-span-2 p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                  className="sm:col-span-2 p-3 border border-[#B2EBF2] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00BCD4] transition-all duration-200"
                   placeholder="Enter your phone number"
                 />
               ) : (
-                <p className="sm:col-span-2 text-indigo-600 font-medium">
+                <p className="sm:col-span-2 text-[#212121] font-medium">
                   {userData.mobile}
                 </p>
               )}
 
-              <label className="font-semibold text-sm">Address:</label>
+              <label className="font-semibold text-sm text-[#757575]">Address:</label>
               {isEdit ? (
                 <div className="sm:col-span-2 space-y-3">
                   <input
@@ -180,7 +205,7 @@ const MyProfile = () => {
                         address: { ...prev.address, line1: e.target.value },
                       }))
                     }
-                    className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                    className="w-full p-3 border border-[#B2EBF2] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00BCD4] transition-all duration-200"
                     placeholder="Address Line 1"
                   />
                   <input
@@ -192,19 +217,19 @@ const MyProfile = () => {
                         address: { ...prev.address, line2: e.target.value },
                       }))
                     }
-                    className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                    className="w-full p-3 border border-[#B2EBF2] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00BCD4] transition-all duration-200"
                     placeholder="Address Line 2"
                   />
                 </div>
               ) : (
-                <p className="sm:col-span-2 text-indigo-600 font-medium">
+                <p className="sm:col-span-2 text-[#212121] font-medium">
                   {userData.address.line1}
                   {userData.address.line2 && <br />}
                   {userData.address.line2}
                 </p>
               )}
 
-              <label className="font-semibold text-sm">
+              <label className="font-semibold text-sm text-[#757575]">
                 Medical Insurance:
               </label>
               {isEdit ? (
@@ -216,7 +241,7 @@ const MyProfile = () => {
                       medicalInsurance: e.target.value,
                     }))
                   }
-                  className="sm:col-span-2 p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                  className="sm:col-span-2 p-3 border border-[#B2EBF2] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00BCD4] transition-all duration-200"
                 >
                   <option value="" disabled>
                     Select Insurance Provider
@@ -232,20 +257,21 @@ const MyProfile = () => {
                   <option value="Medicaid">Medicaid</option>
                 </select>
               ) : (
-                <p className="sm:col-span-2 text-indigo-600 font-medium">
+                <p className="sm:col-span-2 text-[#212121] font-medium">
                   {userData.medicalInsurance}
                 </p>
               )}
             </div>
           </div>
 
+          {/* المعلومات الأساسية */}
           <div>
-            <h3 className="text-xl font-semibold text-indigo-900 mb-4">
+            <h3 className="text-xl font-semibold text-[#009688] mb-4 border-b-2 border-[#B2EBF2] pb-2">
               Basic Information
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-indigo-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[#212121]">
               <div>
-                <label className="font-semibold text-sm">Gender:</label>
+                <label className="font-semibold text-sm text-[#757575]">Gender:</label>
                 {isEdit ? (
                   <select
                     value={userData.gender}
@@ -255,7 +281,7 @@ const MyProfile = () => {
                         gender: e.target.value,
                       }))
                     }
-                    className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                    className="w-full p-3 border border-[#B2EBF2] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00BCD4] transition-all duration-200"
                   >
                     <option value="unisex" disabled>
                       Select Gender
@@ -265,13 +291,13 @@ const MyProfile = () => {
                     <option value="Other">Other</option>
                   </select>
                 ) : (
-                  <p className="text-indigo-600 font-medium">
+                  <p className="text-[#212121] font-medium">
                     {userData.gender}
                   </p>
                 )}
               </div>
               <div>
-                <label className="font-semibold text-sm">Birthdate:</label>
+                <label className="font-semibold text-sm text-[#757575]">Birthdate:</label>
                 {isEdit ? (
                   <input
                     type="date"
@@ -282,22 +308,22 @@ const MyProfile = () => {
                         birthDate: e.target.value,
                       }))
                     }
-                    className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                    className="w-full p-3 border border-[#B2EBF2] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00BCD4] transition-all duration-200"
                   />
                 ) : (
-                  <p className="text-indigo-600 font-medium">
+                  <p className="text-[#212121] font-medium">
                     {userData.birthDate}
                   </p>
                 )}
               </div>
               <div>
-                <label className="font-semibold text-sm">Blood Type:</label>
-                <p className="text-indigo-600 font-medium">
-                  {userData.bloodType}
+                <label className="font-semibold text-sm text-[#757575]">Blood Type:</label>
+                <p className="text-[#212121] font-medium">
+                  {userData.bloodType || "Not specified"}
                 </p>
               </div>
               <div>
-                <label className="font-semibold text-sm">Allergies:</label>
+                <label className="font-semibold text-sm text-[#757575]">Allergies:</label>
                 {isEdit ? (
                   <input
                     type="text"
@@ -314,11 +340,11 @@ const MyProfile = () => {
                         },
                       }))
                     }
-                    className="w-full p-3 border border-indigo-200 rounded-lg bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                    className="w-full p-3 border border-[#B2EBF2] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00BCD4] transition-all duration-200"
                     placeholder="Enter allergies (comma-separated)"
                   />
                 ) : (
-                  <p className="text-indigo-600 font-medium">
+                  <p className="text-[#212121] font-medium">
                     {userData.allergy &&
                     typeof userData.allergy === "object" &&
                     userData.allergy.list.length > 0
@@ -330,10 +356,11 @@ const MyProfile = () => {
             </div>
           </div>
 
+          {/* زر التعديل/الحفظ */}
           <div className="pt-4 flex justify-center">
             <button
               onClick={isEdit ? updateUserProfileData : () => setIsEdit(true)}
-              className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg font-semibold text-base hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-300 shadow-md"
+              className="px-8 py-3 bg-gradient-to-r from-[#00BCD4] to-[#009688] text-white rounded-lg font-semibold text-base hover:from-[#0097A7] hover:to-[#00897B] focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:ring-offset-2 transition-all duration-300 shadow-md"
             >
               {isEdit ? "Save Changes" : "Edit Profile"}
             </button>

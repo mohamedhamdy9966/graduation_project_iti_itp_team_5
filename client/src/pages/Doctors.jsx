@@ -77,10 +77,10 @@ const Doctors = () => {
         </Helmet>
         <div className="animate-pulse flex space-x-4">
           <div className="flex-1 space-y-6 py-6">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-8 bg-[#B2EBF2] rounded w-1/3"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-gray-200 rounded-xl h-80"></div>
+                <div key={i} className="bg-[#B2EBF2] rounded-xl h-80"></div>
               ))}
             </div>
           </div>
@@ -94,18 +94,16 @@ const Doctors = () => {
       <Helmet>
         <title>
           {specialty
-            ? `${
-                urlSpecialtyMap[specialty] || specialty
-              } Specialists - Your Healthcare Platform`
+            ? `${urlSpecialtyMap[specialty] || specialty
+            } Specialists - Your Healthcare Platform`
             : "Find Doctors - Your Healthcare Platform"}
         </title>
         <meta
           name="description"
           content={
             specialty
-              ? `Browse expert ${
-                  urlSpecialtyMap[specialty.toLowerCase()] || specialty
-                } doctors at Your Healthcare Platform. Book appointments with trusted specialists.`
+              ? `Browse expert ${urlSpecialtyMap[specialty.toLowerCase()] || specialty
+              } doctors at Your Healthcare Platform. Book appointments with trusted specialists.`
               : "Find expert doctors across various specialties at Your Healthcare Platform. Browse and book appointments with trusted medical professionals."
           }
         />
@@ -113,25 +111,22 @@ const Doctors = () => {
           name="keywords"
           content={
             specialty
-              ? `find ${
-                  urlSpecialtyMap[specialty.toLowerCase()] || specialty
-                } doctors, book appointments, healthcare, medical specialists`
+              ? `find ${urlSpecialtyMap[specialty.toLowerCase()] || specialty
+              } doctors, book appointments, healthcare, medical specialists`
               : "find doctors, medical specialists, book appointments, healthcare, general physician, gynecologist, dermatologist, pediatrician, surgery, ENT"
           }
         />
         <link
           rel="canonical"
-          href={`https://www.yourhealthcare.com/doctors${
-            specialty ? `/${specialty}` : ""
-          }`}
+          href={`https://www.yourhealthcare.com/doctors${specialty ? `/${specialty}` : ""
+            }`}
         />
         <meta
           property="og:title"
           content={
             specialty
-              ? `${
-                  urlSpecialtyMap[specialty] || specialty
-                } Specialists - Your Healthcare Platform`
+              ? `${urlSpecialtyMap[specialty] || specialty
+              } Specialists - Your Healthcare Platform`
               : "Find Doctors - Your Healthcare Platform"
           }
         />
@@ -139,43 +134,41 @@ const Doctors = () => {
           property="og:description"
           content={
             specialty
-              ? `Browse expert ${
-                  urlSpecialtyMap[specialty.toLowerCase()] || specialty
-                } doctors at Your Healthcare Platform. Book appointments with trusted specialists.`
+              ? `Browse expert ${urlSpecialtyMap[specialty.toLowerCase()] || specialty
+              } doctors at Your Healthcare Platform. Book appointments with trusted specialists.`
               : "Find expert doctors across various specialties at Your Healthcare Platform. Browse and book appointments with trusted medical professionals."
           }
         />
         <meta property="og:type" content="website" />
         <meta
           property="og:url"
-          content={`https://www.yourhealthcare.com/doctors${
-            specialty ? `/${specialty}` : ""
-          }`}
+          content={`https://www.yourhealthcare.com/doctors${specialty ? `/${specialty}` : ""
+            }`}
         />
       </Helmet>
+
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <h1 className="text-3xl font-bold text-[#212121] mb-2">
           {specialty
             ? `${urlSpecialtyMap[specialty] || specialty} Specialists`
             : "Our Specialist Doctors"}
         </h1>
-        <p className="text-gray-600 text-lg">
+        <p className="text-[#757575] text-lg">
           {specialty
-            ? `Browse our expert ${
-                urlSpecialtyMap[specialty.toLowerCase()] || specialty
-              } doctors`
+            ? `Browse our expert ${urlSpecialtyMap[specialty.toLowerCase()] || specialty
+            } doctors`
             : "Browse through our team of specialist doctors"}
         </p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
+        {/* Filter Sidebar */}
         <div className="lg:w-64 flex-shrink-0">
           <button
-            className={`lg:hidden mb-4 py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-              showFilter
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-50"
-            }`}
+            className={`lg:hidden mb-4 py-2 px-4 border border-[#BDBDBD] rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${showFilter
+                ? "bg-[#00BCD4] text-white"
+                : "bg-white text-[#212121] hover:bg-[#B2EBF2]"
+              }`}
             onClick={() => setShowFilter((prev) => !prev)}
           >
             <svg
@@ -196,11 +189,10 @@ const Doctors = () => {
           </button>
 
           <div
-            className={`${
-              showFilter ? "block" : "hidden lg:block"
-            } bg-white p-4 rounded-xl shadow-sm border border-gray-200`}
+            className={`${showFilter ? "block" : "hidden lg:block"
+              } bg-[#00BCD4] p-4 rounded-xl shadow-sm border border-[#B2EBF2]`}
           >
-            <h3 className="font-semibold text-gray-800 mb-3 text-lg">
+            <h3 className="font-semibold text-white mb-3 text-lg">
               Specialties
             </h3>
             <div className="space-y-2">
@@ -211,14 +203,13 @@ const Doctors = () => {
                     specialty === item.toLowerCase().replace(/ /g, "-")
                       ? navigate("/doctors")
                       : navigate(
-                          `/doctors/${item.toLowerCase().replace(/ /g, "-")}`
-                        )
+                        `/doctors/${item.toLowerCase().replace(/ /g, "-")}`
+                      )
                   }
-                  className={`w-full text-left py-2 px-3 rounded-lg transition-all ${
-                    specialty === item.toLowerCase().replace(/ /g, "-")
-                      ? "bg-blue-100 text-blue-700 font-medium"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                  className={`w-full text-left py-2 px-3 rounded-lg transition-all ${specialty === item.toLowerCase().replace(/ /g, "-")
+                      ? "bg-[#B2EBF2] text-[#0097A7] font-medium"
+                      : "text-[#212121] hover:bg-[#B2EBF2]"
+                    }`}
                 >
                   {item}
                 </button>
@@ -227,6 +218,7 @@ const Doctors = () => {
           </div>
         </div>
 
+        {/* Doctors Grid */}
         <div className="flex-1">
           {filterDoc.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -234,7 +226,7 @@ const Doctors = () => {
                 <div
                   key={uuidv4()}
                   onClick={() => navigate(`/my-appointments/${item._id}`)}
-                  className="group border border-gray-200 rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg bg-white"
+                  className="group border border-[#B2EBF2] rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg bg-white"
                 >
                   <div className="relative overflow-hidden h-60">
                     <img
@@ -245,9 +237,8 @@ const Doctors = () => {
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                       <div className="flex items-center gap-2">
                         <div
-                          className={`w-2 h-2 rounded-full ${
-                            item.available ? "bg-green-400" : "bg-gray-400"
-                          }`}
+                          className={`w-2 h-2 rounded-full ${item.available ? "bg-green-400" : "bg-[#BDBDBD]"
+                            }`}
                         ></div>
                         <span className="text-white text-sm">
                           {item.available ? "Available" : "Not Available"}
@@ -256,17 +247,17 @@ const Doctors = () => {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
+                    <h3 className="text-lg font-semibold text-[#212121]">
                       {item.name}
                     </h3>
-                    <p className="text-blue-600 text-sm font-medium">
+                    <p className="text-[#00BCD4] text-sm font-medium">
                       {item.specialty}
                     </p>
                     <div className="mt-3 flex items-center justify-between">
-                      <span className="text-gray-500 text-sm">
+                      <span className="text-[#757575] text-sm">
                         {item.experience} years experience
                       </span>
-                      <span className="text-gray-500 text-sm">
+                      <span className="text-[#757575] text-sm">
                         {item.degree}
                       </span>
                     </div>
@@ -275,30 +266,23 @@ const Doctors = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 mx-auto text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+            <div className="bg-white rounded-xl p-8 text-center border border-[#B2EBF2]">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                className="h-12 w-12 mx-auto text-[#BDBDBD]"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
               </svg>
-              <h3 className="mt-4 text-lg font-medium text-gray-800">
+
+              <h3 className="mt-4 text-lg font-medium text-[#212121]">
                 No doctors found
               </h3>
-              <p className="mt-1 text-gray-500">
+              <p className="mt-1 text-[#757575]">
                 We couldn't find any doctors matching your criteria
               </p>
               <button
                 onClick={() => navigate("/doctors")}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="mt-4 px-4 py-2 bg-[#00BCD4] text-white rounded-lg hover:bg-[#0097A7] transition-colors text-sm font-medium"
               >
                 View All Doctors
               </button>

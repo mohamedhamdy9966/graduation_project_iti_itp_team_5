@@ -2,7 +2,7 @@ import { useContext, useState, useEffect, useRef } from "react";
 import { assets } from "../assets/assets";
 import { NavLink, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
-import { FiShoppingCart } from "react-icons/fi";
+import { MdShoppingCart } from "react-icons/md";
 import logo from "../assets/logo7.png";
 
 const Navbar = () => {
@@ -63,10 +63,10 @@ const Navbar = () => {
   ];
 
   // Cart component for reusability
-  const CartIcon = ({ size = "text-xl" }) => (
+  const CartIcon = ({ size = "text-2xl" }) => (
     <NavLink to="/cart" className="relative">
-      <FiShoppingCart
-        className={`text-white ${size} hover:text-gray-300 transition-colors`}
+      <MdShoppingCart 
+        className={`text-white ${size} hover:text-[gray-300 ] transition-colors`}
       />
       {userData?.cartItems && userData.cartItems.length > 0 && (
         <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
@@ -446,7 +446,7 @@ const Navbar = () => {
                       `}
                       onClick={handleNavClick}
                     >
-                      <FiShoppingCart className="mr-3 text-gray-400 group-hover:text-gray-500" />
+                      <MdShoppingCart  className="mr-3 text-gray-400 group-hover:text-gray-500" />
                       Cart
                       {userData.cartItems && userData.cartItems.length > 0 && (
                         <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">
