@@ -226,7 +226,7 @@ const About = () => {
         <link rel="canonical" href="https://www.roshetah.com/about" />
       </Helmet>
 
-      <style jsx>{`
+      <style jsx="true">{`
         :root {
           --primary-gradient: linear-gradient(135deg, #00bcd4, #009688);
           --accent-gradient: linear-gradient(135deg, #ff6b6b, #4ecdc4);
