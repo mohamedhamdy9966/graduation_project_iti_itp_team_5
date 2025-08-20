@@ -87,7 +87,7 @@ app.post("/paymob-webhook", express.json(), paymobWebhook);
 
 // middlewares
 app.use(express.json());
-const allowedOrigins = ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "https://graduation-project-iti-itp-team-5-u.vercel.app"];
+const allowedOrigins = ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "https://graduation-project-iti-itp-team-5-u.vercel.app", "https://graduation-project-iti-it-git-f1a234-mohamedhamdy9966s-projects.vercel.app"];
 
 app.use(
   cors({
