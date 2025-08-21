@@ -58,7 +58,7 @@ const About = () => {
   const assets = {
     about_image:
       "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    visita_concept:
+    vezzeta_concept:
       "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
     Shezlong_concept:
       "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
@@ -74,11 +74,11 @@ const About = () => {
 
   const integrationStory = [
     {
-      title: "Visita - Medical Excellence",
+      title: "vezzeta - Medical Excellence",
       subtitle: "Physical Health Mastery",
       description:
         "Leading-edge medical consultations, diagnostics, and specialized care connecting patients with world-class physicians.",
-      image: assets.visita_concept,
+      image: assets.vezzeta_concept,
       color: "from-blue-500 via-cyan-500 to-teal-500",
       icon: Stethoscope,
     },
@@ -106,7 +106,7 @@ const About = () => {
     {
       icon: Heart,
       title: "Holistic Care Integration",
-      desc: "Revolutionary fusion of Visita's medical expertise with Shezlong's mental health innovations, creating unprecedented comprehensive care.",
+      desc: "Revolutionary fusion of vezzeta's medical expertise with Shezlong's mental health innovations, creating unprecedented comprehensive care.",
       color: "from-red-400 via-pink-500 to-rose-400",
       badge: "Core Innovation",
     },
@@ -167,7 +167,7 @@ const About = () => {
   const milestones = [
     {
       year: "2019",
-      event: "Visita Founded",
+      event: "vezzeta Founded",
       description: "Medical consultation platform launched",
     },
     {
@@ -178,7 +178,7 @@ const About = () => {
     {
       year: "2024",
       event: "Strategic Merger",
-      description: "Visita and Shezlong unite for integrated healthcare",
+      description: "vezzeta and Shezlong unite for integrated healthcare",
     },
     {
       year: "2025",
@@ -191,15 +191,15 @@ const About = () => {
     <div className="min-h-screen bg-white text-gray-900 overflow-hidden">
       <Helmet>
         <title>
-          Roshetta - Integrated Healthcare Ecosystem | Visita & Shezlong
+          Roshetta - Integrated Healthcare Ecosystem | vezzeta & Shezlong
         </title>
         <meta
           name="description"
-          content="Discover Roshetta, the world's first integrated healthcare ecosystem combining Visita's medical excellence with Shezlong's mental wellness innovations."
+          content="Discover Roshetta, the world's first integrated healthcare ecosystem combining vezzeta's medical excellence with Shezlong's mental wellness innovations."
         />
         <meta
           name="keywords"
-          content="Roshetta, Visita, Shezlong, integrated healthcare, medical consultations, mental health, holistic care, healthcare platform"
+          content="Roshetta, vezzeta, Shezlong, integrated healthcare, medical consultations, mental health, holistic care, healthcare platform"
         />
         <meta name="author" content="Roshetta Team" />
         <meta
@@ -208,7 +208,7 @@ const About = () => {
         />
         <meta
           property="og:description"
-          content="Explore the revolutionary merger of Visita and Shezlong, creating a holistic healthcare platform for physical and mental well-being."
+          content="Explore the revolutionary merger of vezzeta and Shezlong, creating a holistic healthcare platform for physical and mental well-being."
         />
         <meta property="og:image" content={assets.about_image} />
         <meta property="og:url" content="https://www.Roshetta.com/about" />
@@ -220,7 +220,7 @@ const About = () => {
         />
         <meta
           name="twitter:description"
-          content="Join millions experiencing the power of integrated healthcare with Roshetta, combining Visita and Shezlong."
+          content="Join millions experiencing the power of integrated healthcare with Roshetta, combining vezzeta and Shezlong."
         />
         <meta name="twitter:image" content={assets.about_image} />
         <link rel="canonical" href="https://www.Roshetta.com/about" />
@@ -385,7 +385,7 @@ const About = () => {
 
             <div className="space-y-4">
               <p className="text-2xl md:text-4xl font-bold text-gray-800">
-                Where <span className="text-blue-600">Visita</span> meets{" "}
+                Where <span className="text-blue-600">vezzeta</span> meets{" "}
                 <span className="text-purple-600">Shezlong</span>
               </p>
               <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
@@ -683,7 +683,7 @@ const About = () => {
             </h2>
             <p className="text-xl md:text-2xl mb-12 opacity-90 leading-relaxed max-w-4xl mx-auto">
               Join millions who have discovered the power of integrated
-              healthcare. Where Visita's medical excellence meets Shezlong's
+              healthcare. Where vezzeta's medical excellence meets Shezlong's
               mental wellness innovation.
             </p>
 
@@ -703,7 +703,7 @@ const About = () => {
 
             <div className="pt-12 flex justify-center space-x-12 opacity-80">
               <div className="text-center">
-                <div className="text-2xl font-bold text-cyan-400">Visita</div>
+                <div className="text-2xl font-bold text-cyan-400">vezzeta</div>
                 <div className="text-sm">Medical Excellence</div>
               </div>
               <div className="text-4xl font-light text-white">+</div>
