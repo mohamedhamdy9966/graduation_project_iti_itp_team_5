@@ -2,7 +2,7 @@ import React from "react";
 import { useContext } from "react";
 import { AdminContext } from "../../context/AdminContext";
 import { useEffect } from "react";
-import { assets } from "../../../../client/src/assets/assets_admin/assets";
+import { assets } from "../../assets/assets";
 import { v4 as uuidv4 } from "uuid";
 import { AppContext } from "../../context/AppContext";
 import { FaUserNurse, FaCapsules } from "react-icons/fa";
@@ -31,7 +31,7 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center gap-2 bg-white p-4 min-w-52 border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all">
-            <FaUserNurse/>
+            <FaUserNurse />
             <div>
               <p className="text-xl font-semibold text-gray-600">
                 {dashData.labs}
@@ -41,7 +41,7 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center gap-2 bg-white p-4 min-w-52 border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all">
-            <FaCapsules/>
+            <FaCapsules />
             <div>
               <p className="text-xl font-semibold text-gray-600">
                 {dashData.drugs}

@@ -37,19 +37,21 @@ export const AppContextProvider = (props) => {
     window.location.href = path;
   };
 
-  const getDoctorsData = async () => {
-    try {
-      const { data } = await axiosInstance.get("/api/doctor/list");
-      if (data.success) {
-        setDoctors(data.doctors);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error(error.message);
+const getDoctorsData = async () => {
+  try {
+    const { data } = await axiosInstance.get("/api/doctor/list");
+    if (data.success) {
+      setDoctors(data?.doctors || []); // Ensure doctors is an array
+    } else {
+      toast.error(data.message);
+      setDoctors([]); // Set to empty array on failure
     }
-  };
+  } catch (error) {
+    console.log(error);
+    toast.error(error.message);
+    setDoctors([]); // Set to empty array on error
+  }
+};
 
   const getChatbotContext = async () => {
     try {

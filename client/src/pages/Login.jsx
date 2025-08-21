@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
 // import { logo } from "../assets/assets";
 import logo from "../assets/logo8.png";
@@ -21,6 +21,7 @@ import {
   FaShieldAlt,
   FaAllergies,
   FaGoogle,
+  FaApple,
 } from "react-icons/fa";
 
 const Login = () => {
@@ -690,16 +691,11 @@ const Login = () => {
                       />
                     </div>
                   </div>
-                  <div className="flex justify-center mt-4">
-                    <div
-                      id="appleid-signin"
-                      data-color="black"
-                      data-border="true"
-                      data-type="sign in"
+                  <div className="mt-4">
+                    <button
                       onClick={async () => {
                         try {
                           const response = await window.AppleID.auth.signIn();
-                          // Send Apple credentials to backend
                           const { data } = await axios.post(
                             `${backendUrl}/api/user/apple-auth`,
                             {
@@ -722,14 +718,11 @@ const Login = () => {
                           toast.error("Apple Sign-In failed");
                         }
                       }}
-                      className="cursor-pointer"
+                      className="w-full flex items-center justify-center py-3 border border-[#BDBDBD] rounded-lg bg-black text-white text-base font-semibold hover:bg-[#333] focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:ring-offset-2 transition-all duration-300 shadow-sm"
                     >
-                      <img
-                        src="https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple/images/siwa-button-black.png"
-                        alt="Sign in with Apple"
-                        width={220}
-                      />
-                    </div>
+                      <FaApple className="mr-2 text-white text-lg" />
+                      Continue with Apple
+                    </button>
                   </div>
                 </Form>
               )}

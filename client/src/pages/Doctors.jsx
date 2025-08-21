@@ -102,7 +102,7 @@ const Doctors = () => {
     if (filters.minRating) {
       filtered = filtered.filter((doc) => {
         const avgRating =
-          doc.ratings.length > 0
+          doc.ratings?.length > 0
             ? doc.ratings.reduce((sum, r) => sum + r.rating, 0) /
               doc.ratings.length
             : 0;
@@ -443,7 +443,7 @@ const Doctors = () => {
                     </div>
                     <div className="mt-2 text-[#757575] text-sm">
                       Rating:{" "}
-                      {item.ratings.length > 0
+                      {item.ratings?.length > 0
                         ? (
                             item.ratings.reduce((sum, r) => sum + r.rating, 0) /
                             item.ratings.length
