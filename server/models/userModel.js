@@ -26,6 +26,12 @@ const userSchema = new mongoose.Schema(
       sparse: true,
     },
     isGoogleUser: { type: Boolean, default: false },
+    isAppleUser: { type: Boolean, default: false },
+    appleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     verifyOtp: { type: String, default: "" },
     verifyOtpExpireAt: { type: Number, default: 0 },
     isAccountVerified: { type: Boolean, default: false },

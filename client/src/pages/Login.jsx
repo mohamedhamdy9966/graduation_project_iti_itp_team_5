@@ -10,7 +10,18 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { FaUser, FaLock, FaEnvelope, FaPhone, FaBirthdayCake, FaTint, FaVenusMars, FaShieldAlt, FaAllergies, FaGoogle } from "react-icons/fa";
+import {
+  FaUser,
+  FaLock,
+  FaEnvelope,
+  FaPhone,
+  FaBirthdayCake,
+  FaTint,
+  FaVenusMars,
+  FaShieldAlt,
+  FaAllergies,
+  FaGoogle,
+} from "react-icons/fa";
 
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
@@ -164,7 +175,6 @@ const Login = () => {
     } catch (error) {
       toast.error("Google authentication failed");
       console.log(error);
-      
     }
   };
 
@@ -181,6 +191,15 @@ const Login = () => {
     }
   }, [token, navigate]);
 
+  useEffect(() => {
+    window.AppleID.auth.init({
+      clientId: import.meta.env.VITE_APPLE_CLIENT_ID, // from Apple Developer console
+      scope: "name email",
+      redirectURI: import.meta.env.VITE_APPLE_REDIRECT_URI, // must match your Apple app settings
+      usePopup: true,
+    });
+  }, []);
+
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <div className="min-h-screen flex items-center  justify-center bg-gradient-to-b from-[#B2EBF2] to-white px-4">
@@ -196,24 +215,23 @@ const Login = () => {
         </Helmet>
         <div className="w-full max-w-md my-10 bg-white p-8 rounded-2xl shadow-lg border border-[#BDBDBD]">
           <div className="flex justify-center mb-6">
-          <div className="flex items-center mb-4">
-                        <img
-                          src={logo}
-                          width={45}
-                          height={45}
-                          alt="Logo5"
-                          className="mr-0 mb-2"
-                        />
-                        <span
-                          className="text-2xl font-bold mr-2 text-[#0097A7]"
-                          style={{ fontFamily: "var(--logo-font)", letterSpacing: "1px" }}
-                        >
-                          Roshetta
-                        </span>
-                      
-                      </div>
+            <div className="flex items-center mb-4">
+              <img
+                src={logo}
+                width={45}
+                height={45}
+                alt="Logo5"
+                className="mr-0 mb-2"
+              />
+              <span
+                className="text-2xl font-bold mr-2 text-[#0097A7]"
+                style={{ fontFamily: "var(--logo-font)", letterSpacing: "1px" }}
+              >
+                Roshetta
+              </span>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-center text-[#0097A7] mb-6" >
+          <h2 className="text-2xl font-bold text-center text-[#0097A7] mb-6">
             {state === "Sign Up"
               ? "Create Account"
               : forgotPassword
@@ -408,8 +426,19 @@ const Login = () => {
                             <option value="O-">O-</option>
                           </Field>
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <svg className="w-4 h-4 text-[#757575]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                            <svg
+                              className="w-4 h-4 text-[#757575]"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M19 9l-7 7-7-7"
+                              ></path>
                             </svg>
                           </div>
                         </div>
@@ -441,8 +470,19 @@ const Login = () => {
                             <option value="Other">Other</option>
                           </Field>
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <svg className="w-4 h-4 text-[#757575]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                            <svg
+                              className="w-4 h-4 text-[#757575]"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M19 9l-7 7-7-7"
+                              ></path>
                             </svg>
                           </div>
                         </div>
@@ -647,6 +687,47 @@ const Login = () => {
                             Continue with Google
                           </button>
                         )}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-center mt-4">
+                    <div
+                      id="appleid-signin"
+                      data-color="black"
+                      data-border="true"
+                      data-type="sign in"
+                      onClick={async () => {
+                        try {
+                          const response = await window.AppleID.auth.signIn();
+                          // Send Apple credentials to backend
+                          const { data } = await axios.post(
+                            `${backendUrl}/api/user/apple-auth`,
+                            {
+                              identityToken: response.authorization.id_token,
+                              authorizationCode: response.authorization.code,
+                              user: response.user, // only on first login
+                            }
+                          );
+
+                          if (data.success) {
+                            localStorage.setItem("token", data.token);
+                            setToken(data.token);
+                            toast.success("Apple authentication successful");
+                            navigate("/");
+                          } else {
+                            toast.error(data.message);
+                          }
+                        } catch (err) {
+                          console.error("Apple Sign-In error:", err);
+                          toast.error("Apple Sign-In failed");
+                        }
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <img
+                        src="https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple/images/siwa-button-black.png"
+                        alt="Sign in with Apple"
+                        width={220}
                       />
                     </div>
                   </div>
