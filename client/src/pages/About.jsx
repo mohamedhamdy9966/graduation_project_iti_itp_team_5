@@ -60,7 +60,7 @@ const About = () => {
       "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     visita_concept:
       "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-    sheizlong_concept:
+    Shezlong_concept:
       "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
     integration:
       "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
@@ -83,16 +83,16 @@ const About = () => {
       icon: Stethoscope,
     },
     {
-      title: "Sheizlong - Mental Wellness",
+      title: "Shezlong - Mental Wellness",
       subtitle: "Psychological Well-being",
       description:
         "Revolutionary mental health platform offering therapy, counseling, and psychological support through innovative digital solutions.",
-      image: assets.sheizlong_concept,
+      image: assets.Shezlong_concept,
       color: "from-purple-500 via-pink-500 to-rose-500",
       icon: Brain,
     },
     {
-      title: "Roshetah - Unified Future",
+      title: "Roshetta - Unified Future",
       subtitle: "Complete Healthcare Ecosystem",
       description:
         "The seamless integration creating the world's first truly holistic healthcare platform, treating mind and body as one.",
@@ -106,7 +106,7 @@ const About = () => {
     {
       icon: Heart,
       title: "Holistic Care Integration",
-      desc: "Revolutionary fusion of Visita's medical expertise with Sheizlong's mental health innovations, creating unprecedented comprehensive care.",
+      desc: "Revolutionary fusion of Visita's medical expertise with Shezlong's mental health innovations, creating unprecedented comprehensive care.",
       color: "from-red-400 via-pink-500 to-rose-400",
       badge: "Core Innovation",
     },
@@ -172,17 +172,17 @@ const About = () => {
     },
     {
       year: "2021",
-      event: "Sheizlong Established",
+      event: "Shezlong Established",
       description: "Mental health platform revolutionizes care",
     },
     {
       year: "2024",
       event: "Strategic Merger",
-      description: "Visita and Sheizlong unite for integrated healthcare",
+      description: "Visita and Shezlong unite for integrated healthcare",
     },
     {
       year: "2025",
-      event: "Roshetah Launch",
+      event: "Roshetta Launch",
       description: "Complete healthcare ecosystem goes live",
     },
   ];
@@ -191,39 +191,39 @@ const About = () => {
     <div className="min-h-screen bg-white text-gray-900 overflow-hidden">
       <Helmet>
         <title>
-          Roshetah - Integrated Healthcare Ecosystem | Visita & Sheizlong
+          Roshetta - Integrated Healthcare Ecosystem | Visita & Shezlong
         </title>
         <meta
           name="description"
-          content="Discover Roshetah, the world's first integrated healthcare ecosystem combining Visita's medical excellence with Sheizlong's mental wellness innovations."
+          content="Discover Roshetta, the world's first integrated healthcare ecosystem combining Visita's medical excellence with Shezlong's mental wellness innovations."
         />
         <meta
           name="keywords"
-          content="Roshetah, Visita, Sheizlong, integrated healthcare, medical consultations, mental health, holistic care, healthcare platform"
+          content="Roshetta, Visita, Shezlong, integrated healthcare, medical consultations, mental health, holistic care, healthcare platform"
         />
-        <meta name="author" content="Roshetah Team" />
+        <meta name="author" content="Roshetta Team" />
         <meta
           property="og:title"
-          content="Roshetah - Integrated Healthcare Ecosystem"
+          content="Roshetta - Integrated Healthcare Ecosystem"
         />
         <meta
           property="og:description"
-          content="Explore the revolutionary merger of Visita and Sheizlong, creating a holistic healthcare platform for physical and mental well-being."
+          content="Explore the revolutionary merger of Visita and Shezlong, creating a holistic healthcare platform for physical and mental well-being."
         />
         <meta property="og:image" content={assets.about_image} />
-        <meta property="og:url" content="https://www.roshetah.com/about" />
+        <meta property="og:url" content="https://www.Roshetta.com/about" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
-          content="Roshetah - Integrated Healthcare Ecosystem"
+          content="Roshetta - Integrated Healthcare Ecosystem"
         />
         <meta
           name="twitter:description"
-          content="Join millions experiencing the power of integrated healthcare with Roshetah, combining Visita and Sheizlong."
+          content="Join millions experiencing the power of integrated healthcare with Roshetta, combining Visita and Shezlong."
         />
         <meta name="twitter:image" content={assets.about_image} />
-        <link rel="canonical" href="https://www.roshetah.com/about" />
+        <link rel="canonical" href="https://www.Roshetta.com/about" />
       </Helmet>
 
       <style jsx="true">{`
@@ -370,7 +370,7 @@ const About = () => {
             <div className="relative inline-block mb-8">
               <h1 className="text-6xl md:text-8xl lg:text-9xl font-black">
                 <span className="text-gradient relative inline-block">
-                  Roshetah
+                  Roshetta
                   <div className="absolute -inset-4 bg-gradient-to-r from-cyan-400 to-teal-400 rounded-3xl opacity-20 blur-2xl pulse-ring"></div>
                 </span>
               </h1>
@@ -386,7 +386,7 @@ const About = () => {
             <div className="space-y-4">
               <p className="text-2xl md:text-4xl font-bold text-gray-800">
                 Where <span className="text-blue-600">Visita</span> meets{" "}
-                <span className="text-purple-600">Sheizlong</span>
+                <span className="text-purple-600">Shezlong</span>
               </p>
               <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
                 The revolutionary merger creating the world's first truly
@@ -683,7 +683,7 @@ const About = () => {
             </h2>
             <p className="text-xl md:text-2xl mb-12 opacity-90 leading-relaxed max-w-4xl mx-auto">
               Join millions who have discovered the power of integrated
-              healthcare. Where Visita's medical excellence meets Sheizlong's
+              healthcare. Where Visita's medical excellence meets Shezlong's
               mental wellness innovation.
             </p>
 
@@ -709,13 +709,13 @@ const About = () => {
               <div className="text-4xl font-light text-white">+</div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-400">
-                  Sheizlong
+                  Shezlong
                 </div>
                 <div className="text-sm">Mental Wellness</div>
               </div>
               <div className="text-4xl font-light text-white">=</div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-gradient">Roshetah</div>
+                <div className="text-2xl font-bold text-gradient">Roshetta</div>
                 <div className="text-sm">Complete Healthcare</div>
               </div>
             </div>
