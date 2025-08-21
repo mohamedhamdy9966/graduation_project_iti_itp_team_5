@@ -26,6 +26,7 @@ export const AppContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
   const [currency] = useState("EGP ");
   const [showUserLogin, setShowUserLogin] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(false)
 
   // Create axios instance with base URL
   const axiosInstance = axios.create({
