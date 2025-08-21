@@ -88,8 +88,6 @@ const AddLab = () => {
         JSON.stringify({ line1: values.address1, line2: values.address2 })
       );
 
-      console.log("Submitting lab with services:", values.services); // Debug log
-
       const { data } = await axios.post(
         backendUrl + "/api/admin/add-lab",
         formData,

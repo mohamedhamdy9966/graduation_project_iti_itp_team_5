@@ -175,7 +175,6 @@ const Login = () => {
       }
     } catch (error) {
       toast.error("Google authentication failed");
-      console.log(error);
     }
   };
 

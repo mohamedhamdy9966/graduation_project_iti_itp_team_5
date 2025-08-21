@@ -95,7 +95,6 @@ const addDoctor = async (req, res) => {
     const newDoctor = new doctorModel(doctorData);
     await newDoctor.save();
 
-    console.log("Doctor added successfully:", newDoctor.name);
     res.json({ success: true, message: "Doctor Added" });
   } catch (error) {
     console.log("Add doctor error:", error);

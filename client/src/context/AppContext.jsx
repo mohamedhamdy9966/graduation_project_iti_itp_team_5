@@ -47,7 +47,6 @@ const getDoctorsData = async () => {
       setDoctors([]); // Set to empty array on failure
     }
   } catch (error) {
-    console.log(error);
     toast.error(error.message);
     setDoctors([]); // Set to empty array on error
   }
@@ -62,7 +61,6 @@ const getDoctorsData = async () => {
         toast.error(data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.message);
     }
   };

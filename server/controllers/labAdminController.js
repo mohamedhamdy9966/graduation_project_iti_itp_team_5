@@ -110,7 +110,6 @@ const addLab = async (req, res) => {
 const allLabs = async (req, res) => {
   try {
     const labs = await labModel.find({}).select("-password");
-    console.log("Labs found:", labs.length);
     res.json({ success: true, labs });
   } catch (error) {
     console.log("Error fetching labs:", error);

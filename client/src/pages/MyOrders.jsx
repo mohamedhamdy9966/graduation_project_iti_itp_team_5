@@ -23,7 +23,6 @@ const MyOrders = () => {
       });
 
       if (data.success) {
-        console.log("Orders fetched:", data.orders);
         setMyOrders(data.orders || []);
       } else {
         console.error("Failed to fetch orders:", data.message);
