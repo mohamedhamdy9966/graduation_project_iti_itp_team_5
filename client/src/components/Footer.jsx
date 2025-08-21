@@ -7,6 +7,8 @@ import {
   FaTwitter,
   FaInstagram,
   FaLinkedin,
+  FaTiktok,
+  FaYoutube
 } from "react-icons/fa";
 import { MdHealthAndSafety, MdPrivacyTip, MdEmergency } from "react-icons/md";
 import { HiHome, HiInformationCircle } from "react-icons/hi";
@@ -73,6 +75,17 @@ const Footer = () => {
                 className="social-icon bg-white bg-opacity-20 hover:bg-opacity-30"
               >
                 <FaLinkedin className="text-[#0077b5]" />
+              </a>
+              <a
+                href="#"
+                className="social-icon bg-white bg-opacity-20 hover:bg-opacity-30"
+              >
+                <FaYoutube className="text-[#d11616]" />
+              </a><a
+                href="#"
+                className="social-icon bg-white bg-opacity-20 hover:bg-opacity-30"
+              >
+                <FaTiktok className="text-[#000000]" />
               </a>
             </div>
           </div>
