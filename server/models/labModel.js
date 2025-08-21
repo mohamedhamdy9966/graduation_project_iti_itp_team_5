@@ -22,11 +22,27 @@ const labSchema = new mongoose.Schema(
     },
     date: { type: Number, default: Date.now },
     slotsBooked: { type: Object, default: {} },
+    ratings: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "user",
+          required: true,
+        },
+        rating: {
+          type: Number,
+          required: true,
+          min: [1, "Rating must be at least 1"],
+          max: [5, "Rating cannot exceed 5"],
+        },
+        feedback: { type: String, default: "" },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { minimize: false }
 );
 
-const labModel =
-  mongoose.models.lab || mongoose.model("lab", labSchema);
+const labModel = mongoose.models.lab || mongoose.model("lab", labSchema);
 
 export default labModel;

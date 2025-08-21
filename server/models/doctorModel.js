@@ -25,6 +25,23 @@ const doctorSchema = new mongoose.Schema(
     },
     date: { type: Number, required: true },
     slotsBooked: { type: Object, default: {} },
+    ratings: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "user",
+          required: true,
+        },
+        rating: {
+          type: Number,
+          required: true,
+          min: [1, "Rating must be at least 1"],
+          max: [5, "Rating cannot exceed 5"],
+        },
+        feedback: { type: String, default: "" },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { minimize: false }
 );
