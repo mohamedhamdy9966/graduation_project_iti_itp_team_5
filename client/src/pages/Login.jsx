@@ -27,6 +27,7 @@ import {
   FaTrash,
   FaCalendarAlt,
   FaClock,
+  FaSyringe
 } from "react-icons/fa";
 
 const Login = () => {
@@ -60,6 +61,13 @@ const Login = () => {
     notes: Yup.string(),
   });
 
+  const surgerySchema = Yup.object().shape({
+    name: Yup.string().required("Surgery name is required"),
+    date: Yup.date(),
+    status: Yup.string().oneOf(["Completed", "Scheduled"]).required(),
+    notes: Yup.string(),
+  });
+
   const signUpSchema = Yup.object().shape({
     name: Yup.string().required("Full name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
@@ -86,6 +94,7 @@ const Login = () => {
       .required("Confirm password is required"),
     drugs: Yup.array().of(drugSchema),
     diseases: Yup.array().of(diseaseSchema),
+    surgeries: Yup.array().of(surgerySchema),
   });
 
   const forgotPasswordSchema = Yup.object().shape({
@@ -106,6 +115,7 @@ const Login = () => {
     confirmPassword: "",
     drugs: [],
     diseases: [],
+    surgeries: [],
   };
 
   // Form submission handler
@@ -135,12 +145,16 @@ const Login = () => {
             ...disease,
             diagnosedDate: disease.diagnosedDate || new Date(),
           })),
+          surgeries: values.surgeries.map((surgery) => ({
+            ...surgery,
+            date: surgery.date || new Date(),
+          })),
         });
         if (data.success) {
           localStorage.setItem("token", data.token);
           setToken(data.token);
           toast.success(data.message);
-          navigate("/");
+          navigate("/verify-email", { state: { userId: data.userId, email: values.email } });
         } else {
           toast.error(data.message);
         }
@@ -190,17 +204,22 @@ const Login = () => {
     }
   };
 
-  // Google Sign-In success handler
+  // Google Sign-In/Up success handler
   const handleGoogleSuccess = async (response) => {
     try {
       const { data } = await axios.post(`${backendUrl}/api/user/google-auth`, {
         token: response.credential,
+        isSignUp: state === "Sign Up",
       });
       if (data.success) {
         localStorage.setItem("token", data.token);
         setToken(data.token);
-        toast.success("Google authentication successful");
-        navigate("/");
+        toast.success(data.message);
+        if (data.needsProfileCompletion) {
+          navigate("/complete-profile", { state: { email: data.email } });
+        } else {
+          navigate("/");
+        }
       } else {
         toast.error(data.message);
       }
@@ -209,10 +228,39 @@ const Login = () => {
     }
   };
 
-  // Google Sign-In failure handler
+  // Google Sign-In/Up failure handler
   const handleGoogleFailure = (error) => {
     console.error("Google Sign-In error:", error);
     toast.error("Google Sign-In failed");
+  };
+
+  // Apple Sign-In/Up handler
+  const handleAppleAuth = async () => {
+    try {
+      const response = await window.AppleID.auth.signIn();
+      const { data } = await axios.post(`${backendUrl}/api/user/apple-auth`, {
+        identityToken: response.authorization.id_token,
+        authorizationCode: response.authorization.code,
+        user: response.user,
+        isSignUp: state === "Sign Up",
+      });
+
+      if (data.success) {
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        toast.success(data.message);
+        if (data.needsProfileCompletion) {
+          navigate("/complete-profile", { state: { email: data.email } });
+        } else {
+          navigate("/");
+        }
+      } else {
+        toast.error(data.message);
+      }
+    } catch (err) {
+      console.error("Apple Sign-In error:", err);
+      toast.error("Apple Sign-In failed");
+    }
   };
 
   // Redirect if already logged in
@@ -667,7 +715,7 @@ const Login = () => {
                       )}
                     </div>
 
-                    {/* Drugs and Diseases Section for Sign Up */}
+                    {/* Drugs, Diseases, and Surgeries Section for Sign Up */}
                     {state === "Sign Up" && (
                       <div className="space-y-6">
                         {/* Drugs Section */}
@@ -861,6 +909,100 @@ const Login = () => {
                             )}
                           </FieldArray>
                         </div>
+
+                        {/* Surgeries Section */}
+                        <div className="bg-[#F5F5F5] p-4 rounded-lg">
+                          <div className="flex items-center mb-4">
+                            <FaSyringe className="text-[#009688] mr-2" />
+                            <h3 className="text-lg font-semibold text-[#212121]">
+                              Surgeries (Optional)
+                            </h3>
+                          </div>
+                          <FieldArray name="surgeries">
+                            {({ push, remove }) => (
+                              <div>
+                                {values.surgeries.map((surgery, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-white p-3 rounded border mb-3"
+                                  >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                      <div>
+                                        <Field
+                                          name={`surgeries.${index}.name`}
+                                          placeholder="Surgery name *"
+                                          className="w-full p-2 border border-[#BDBDBD] rounded focus:outline-none focus:ring-1 focus:ring-[#00BCD4]"
+                                        />
+                                        <ErrorMessage
+                                          name={`surgeries.${index}.name`}
+                                          component="div"
+                                          className="text-red-500 text-xs mt-1"
+                                        />
+                                      </div>
+                                      <div>
+                                        <div className="relative">
+                                          <FaCalendarAlt className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#757575] text-sm" />
+                                          <Field
+                                            type="date"
+                                            name={`surgeries.${index}.date`}
+                                            className="w-full pl-8 p-2 border border-[#BDBDBD] rounded focus:outline-none focus:ring-1 focus:ring-[#00BCD4]"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                      <div className="flex gap-2 items-start">
+                                        <Field
+                                          as="select"
+                                          name={`surgeries.${index}.status`}
+                                          className="flex-1 p-2 border border-[#BDBDBD] rounded focus:outline-none focus:ring-1 focus:ring-[#00BCD4]"
+                                        >
+                                          <option value="">Status</option>
+                                          <option value="Completed">Completed</option>
+                                          <option value="Scheduled">Scheduled</option>
+                                        </Field>
+                                        <button
+                                          type="button"
+                                          onClick={() => remove(index)}
+                                          className="p-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                        >
+                                          <FaTrash className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                      <div>
+                                        <Field
+                                          as="textarea"
+                                          name={`surgeries.${index}.notes`}
+                                          placeholder="Additional notes (optional)"
+                                          className="w-full p-2 border border-[#BDBDBD] rounded focus:outline-none focus:ring-1 focus:ring-[#00BCD4] resize-none h-16"
+                                        />
+                                      </div>
+                                    </div>
+                                    <ErrorMessage
+                                      name={`surgeries.${index}.status`}
+                                      component="div"
+                                      className="text-red-500 text-xs mt-1"
+                                    />
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    push({
+                                      name: "",
+                                      date: "",
+                                      status: "Completed",
+                                      notes: "",
+                                    })
+                                  }
+                                  className="w-full p-2 border-2 border-dashed border-[#009688] text-[#009688] rounded hover:bg-[#E0F2F1] transition-colors flex items-center justify-center"
+                                >
+                                  <FaPlus className="mr-2" /> Add Surgery
+                                </button>
+                              </div>
+                            )}
+                          </FieldArray>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -904,82 +1046,49 @@ const Login = () => {
                       </span>
                     </p>
 
-                    {/* Social Login Buttons */}
-                    {state === "Login" && (
-                      <>
-                        <div className="mt-6">
-                          <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                              <div className="w-full border-t border-[#BDBDBD]"></div>
-                            </div>
-                            <div className="relative flex justify-center text-sm">
-                              <span className="px-2 bg-white text-[#757575] font-medium">
-                                Or continue with
-                              </span>
-                            </div>
-                          </div>
-                          <div className="mt-4">
-                            <GoogleLogin
-                              onSuccess={handleGoogleSuccess}
-                              onError={handleGoogleFailure}
-                              text="continue_with"
-                              shape="rectangular"
-                              width="100%"
-                              theme="outline"
-                              logo_alignment="left"
-                              render={(renderProps) => (
-                                <button
-                                  onClick={renderProps.onClick}
-                                  disabled={renderProps.disabled}
-                                  className="w-full flex items-center justify-center py-3 border border-[#BDBDBD] rounded-lg bg-white text-[#212121] text-base font-semibold hover:bg-[#B2EBF2] focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:ring-offset-2 transition-all duration-300 shadow-sm"
-                                >
-                                  <FaGoogle className="mr-2 text-[#009688]" />
-                                  Continue with Google
-                                </button>
-                              )}
-                            />
-                          </div>
+                    {/* Social Login/Signup Buttons */}
+                    <div className="mt-6">
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-[#BDBDBD]"></div>
                         </div>
-                        <div className="mt-4">
-                          <button
-                            onClick={async () => {
-                              try {
-                                const response =
-                                  await window.AppleID.auth.signIn();
-                                const { data } = await axios.post(
-                                  `${backendUrl}/api/user/apple-auth`,
-                                  {
-                                    identityToken:
-                                      response.authorization.id_token,
-                                    authorizationCode:
-                                      response.authorization.code,
-                                    user: response.user,
-                                  }
-                                );
-
-                                if (data.success) {
-                                  localStorage.setItem("token", data.token);
-                                  setToken(data.token);
-                                  toast.success(
-                                    "Apple authentication successful"
-                                  );
-                                  navigate("/");
-                                } else {
-                                  toast.error(data.message);
-                                }
-                              } catch (err) {
-                                console.error("Apple Sign-In error:", err);
-                                toast.error("Apple Sign-In failed");
-                              }
-                            }}
-                            className="w-full flex items-center justify-center py-3 border border-[#BDBDBD] rounded-lg bg-black text-white text-base font-semibold hover:bg-[#333] focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:ring-offset-2 transition-all duration-300 shadow-sm"
-                          >
-                            <FaApple className="mr-2 text-white text-lg" />
-                            Continue with Apple
-                          </button>
+                        <div className="relative flex justify-center text-sm">
+                          <span className="px-2 bg-white text-[#757575] font-medium">
+                            Or continue with
+                          </span>
                         </div>
-                      </>
-                    )}
+                      </div>
+                      <div className="mt-4">
+                        <GoogleLogin
+                          onSuccess={handleGoogleSuccess}
+                          onError={handleGoogleFailure}
+                          text={state === "Sign Up" ? "signup_with" : "continue_with"}
+                          shape="rectangular"
+                          width="100%"
+                          theme="outline"
+                          logo_alignment="left"
+                          render={(renderProps) => (
+                            <button
+                              onClick={renderProps.onClick}
+                              disabled={renderProps.disabled}
+                              className="w-full flex items-center justify-center py-3 border border-[#BDBDBD] rounded-lg bg-white text-[#212121] text-base font-semibold hover:bg-[#B2EBF2] focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:ring-offset-2 transition-all duration-300 shadow-sm"
+                            >
+                              <FaGoogle className="mr-2 text-[#009688]" />
+                              {state === "Sign Up" ? "Sign Up with Google" : "Continue with Google"}
+                            </button>
+                          )}
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <button
+                        onClick={handleAppleAuth}
+                        className="w-full flex items-center justify-center py-3 border border-[#BDBDBD] rounded-lg bg-black text-white text-base font-semibold hover:bg-[#333] focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:ring-offset-2 transition-all duration-300 shadow-sm"
+                      >
+                        <FaApple className="mr-2 text-white text-lg" />
+                        {state === "Sign Up" ? "Sign Up with Apple" : "Continue with Apple"}
+                      </button>
+                    </div>
                   </div>
                 </Form>
               )}

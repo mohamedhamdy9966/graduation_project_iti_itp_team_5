@@ -22,6 +22,7 @@ const registerUser = async (req, res) => {
       allergy,
       drugs = [],
       diseases = [],
+      surgeries = [],
     } = req.body;
     if (
       !name ||
@@ -95,6 +96,10 @@ const registerUser = async (req, res) => {
       diseases: diseases.map((disease) => ({
         ...disease,
         diagnosedDate: disease.diagnosedDate || new Date(),
+      })),
+      surgeries: surgeries.map((surgery) => ({  // Add surgeries mapping
+        ...surgery,
+        date: surgery.date || new Date(),
       })),
     };
 

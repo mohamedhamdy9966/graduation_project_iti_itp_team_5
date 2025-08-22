@@ -87,6 +87,14 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    surgeries: [
+      {
+        name: { type: String, required: true },
+        date: { type: Date, default: Date.now },
+        doctor: { type: String, default: "" },
+        notes: { type: String, default: "" },
+      },
+    ],
     medicalRecord: [
       {
         recordType: {
