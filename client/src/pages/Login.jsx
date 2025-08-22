@@ -27,7 +27,8 @@ import {
   FaTrash,
   FaCalendarAlt,
   FaClock,
-  FaSyringe
+  FaSyringe,
+  FaUsers,
 } from "react-icons/fa";
 
 const Login = () => {
@@ -68,6 +69,13 @@ const Login = () => {
     notes: Yup.string(),
   });
 
+  const familyHistorySchema = Yup.object().shape({
+    relative: Yup.string().required("Relative type is required"),
+    condition: Yup.string().required("Condition name is required"),
+    diagnosedDate: Yup.date(),
+    notes: Yup.string(),
+  });
+
   const signUpSchema = Yup.object().shape({
     name: Yup.string().required("Full name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
@@ -95,6 +103,7 @@ const Login = () => {
     drugs: Yup.array().of(drugSchema),
     diseases: Yup.array().of(diseaseSchema),
     surgeries: Yup.array().of(surgerySchema),
+    familyHistory: Yup.array().of(familyHistorySchema),
   });
 
   const forgotPasswordSchema = Yup.object().shape({
@@ -116,6 +125,7 @@ const Login = () => {
     drugs: [],
     diseases: [],
     surgeries: [],
+    familyHistory: [],
   };
 
   // Form submission handler
@@ -149,12 +159,18 @@ const Login = () => {
             ...surgery,
             date: surgery.date || new Date(),
           })),
+          familyHistory: values.familyHistory.map((item) => ({
+            ...item,
+            diagnosedDate: item.diagnosedDate || new Date(),
+          })),
         });
         if (data.success) {
           localStorage.setItem("token", data.token);
           setToken(data.token);
           toast.success(data.message);
-          navigate("/verify-email", { state: { userId: data.userId, email: values.email } });
+          navigate("/verify-email", {
+            state: { userId: data.userId, email: values.email },
+          });
         } else {
           toast.error(data.message);
         }
@@ -958,8 +974,12 @@ const Login = () => {
                                           className="flex-1 p-2 border border-[#BDBDBD] rounded focus:outline-none focus:ring-1 focus:ring-[#00BCD4]"
                                         >
                                           <option value="">Status</option>
-                                          <option value="Completed">Completed</option>
-                                          <option value="Scheduled">Scheduled</option>
+                                          <option value="Completed">
+                                            Completed
+                                          </option>
+                                          <option value="Scheduled">
+                                            Scheduled
+                                          </option>
                                         </Field>
                                         <button
                                           type="button"
@@ -998,6 +1018,96 @@ const Login = () => {
                                   className="w-full p-2 border-2 border-dashed border-[#009688] text-[#009688] rounded hover:bg-[#E0F2F1] transition-colors flex items-center justify-center"
                                 >
                                   <FaPlus className="mr-2" /> Add Surgery
+                                </button>
+                              </div>
+                            )}
+                          </FieldArray>
+                        </div>
+
+                        {/* family history */}
+                        <div className="bg-[#F5F5F5] p-4 rounded-lg">
+                          <div className="flex items-center mb-4">
+                            <FaUsers className="text-[#009688] mr-2" />
+                            <h3 className="text-lg font-semibold text-[#212121]">
+                              Family Health History (Optional)
+                            </h3>
+                          </div>
+                          <FieldArray name="familyHistory">
+                            {({ push, remove }) => (
+                              <div>
+                                {values.familyHistory.map((item, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-white p-3 rounded border mb-3"
+                                  >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                      <div>
+                                        <Field
+                                          name={`familyHistory.${index}.relative`}
+                                          placeholder="Relative (e.g., Mother, Father) *"
+                                          className="w-full p-2 border border-[#BDBDBD] rounded focus:outline-none focus:ring-1 focus:ring-[#00BCD4]"
+                                        />
+                                        <ErrorMessage
+                                          name={`familyHistory.${index}.relative`}
+                                          component="div"
+                                          className="text-red-500 text-xs mt-1"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Field
+                                          name={`familyHistory.${index}.condition`}
+                                          placeholder="Condition/Disease name *"
+                                          className="w-full p-2 border border-[#BDBDBD] rounded focus:outline-none focus:ring-1 focus:ring-[#00BCD4]"
+                                        />
+                                        <ErrorMessage
+                                          name={`familyHistory.${index}.condition`}
+                                          component="div"
+                                          className="text-red-500 text-xs mt-1"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <div>
+                                        <div className="relative">
+                                          <FaCalendarAlt className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#757575] text-sm" />
+                                          <Field
+                                            type="date"
+                                            name={`familyHistory.${index}.diagnosedDate`}
+                                            className="w-full pl-8 p-2 border border-[#BDBDBD] rounded focus:outline-none focus:ring-1 focus:ring-[#00BCD4]"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <Field
+                                          as="textarea"
+                                          name={`familyHistory.${index}.notes`}
+                                          placeholder="Additional notes (optional)"
+                                          className="w-full p-2 border border-[#BDBDBD] rounded focus:outline-none focus:ring-1 focus:ring-[#00BCD4] resize-none h-16"
+                                        />
+                                      </div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => remove(index)}
+                                      className="mt-2 p-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                    >
+                                      <FaTrash className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    push({
+                                      relative: "",
+                                      condition: "",
+                                      diagnosedDate: "",
+                                      notes: "",
+                                    })
+                                  }
+                                  className="w-full p-2 border-2 border-dashed border-[#009688] text-[#009688] rounded hover:bg-[#E0F2F1] transition-colors flex items-center justify-center"
+                                >
+                                  <FaPlus className="mr-2" /> Add Family History
                                 </button>
                               </div>
                             )}
@@ -1062,7 +1172,11 @@ const Login = () => {
                         <GoogleLogin
                           onSuccess={handleGoogleSuccess}
                           onError={handleGoogleFailure}
-                          text={state === "Sign Up" ? "signup_with" : "continue_with"}
+                          text={
+                            state === "Sign Up"
+                              ? "signup_with"
+                              : "continue_with"
+                          }
                           shape="rectangular"
                           width="100%"
                           theme="outline"
@@ -1074,7 +1188,9 @@ const Login = () => {
                               className="w-full flex items-center justify-center py-3 border border-[#BDBDBD] rounded-lg bg-white text-[#212121] text-base font-semibold hover:bg-[#B2EBF2] focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:ring-offset-2 transition-all duration-300 shadow-sm"
                             >
                               <FaGoogle className="mr-2 text-[#009688]" />
-                              {state === "Sign Up" ? "Sign Up with Google" : "Continue with Google"}
+                              {state === "Sign Up"
+                                ? "Sign Up with Google"
+                                : "Continue with Google"}
                             </button>
                           )}
                         />
@@ -1086,7 +1202,9 @@ const Login = () => {
                         className="w-full flex items-center justify-center py-3 border border-[#BDBDBD] rounded-lg bg-black text-white text-base font-semibold hover:bg-[#333] focus:outline-none focus:ring-2 focus:ring-[#00BCD4] focus:ring-offset-2 transition-all duration-300 shadow-sm"
                       >
                         <FaApple className="mr-2 text-white text-lg" />
-                        {state === "Sign Up" ? "Sign Up with Apple" : "Continue with Apple"}
+                        {state === "Sign Up"
+                          ? "Sign Up with Apple"
+                          : "Continue with Apple"}
                       </button>
                     </div>
                   </div>

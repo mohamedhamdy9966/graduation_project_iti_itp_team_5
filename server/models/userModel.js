@@ -95,6 +95,14 @@ const userSchema = new mongoose.Schema(
         notes: { type: String, default: "" },
       },
     ],
+    familyHistory: [
+      {
+        relative: { type: String, required: true },
+        condition: { type: String, required: true },
+        diagnosedDate: { type: Date, default: Date.now },
+        notes: { type: String, default: "" },
+      },
+    ],
     medicalRecord: [
       {
         recordType: {
