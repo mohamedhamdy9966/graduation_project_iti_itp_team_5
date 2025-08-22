@@ -23,7 +23,6 @@ const AdminContextProvider = (props) => {
         {},
         { headers: { aToken } }
       );
-      console.log("All Doctors Response:", data);
       if (data.success) {
         setDoctors(data.doctors);
       } else {
@@ -39,7 +38,6 @@ const AdminContextProvider = (props) => {
       const { data } = await axios.get(backendUrl + "/api/admin/all-labs", {
         headers: { aToken },
       });
-      console.log("All Labs Response:", data);
       if (data.success) {
         setLabs(data.labs);
       } else {
@@ -95,14 +93,12 @@ const changeDoctorAvailability = async (docId) => {
       const { data } = await axios.get(backendUrl + "/api/admin/appointments", {
         headers: { aToken },
       });
-      console.log("Appointments Response:", data);
       if (data.success) {
         setAppointments(data.appointments);
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      console.log("Error fetching appointments:", error);
       toast.error(error.message);
     }
   };
@@ -130,7 +126,6 @@ const changeDoctorAvailability = async (docId) => {
       const { data } = await axios.get(backendUrl + "/api/admin/dashboard", {
         headers: { aToken },
       });
-      console.log("Dashboard Data:", data);
       if (data.success) {
         setDashData(data.dashData);
       } else {

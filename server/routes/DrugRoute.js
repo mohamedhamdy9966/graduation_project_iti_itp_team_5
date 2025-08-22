@@ -1,18 +1,29 @@
 import express from "express";
-import upload  from "../middlewares/multer.js";
+import upload from "../middlewares/multer.js";
 import {
   addDrug,
   changeStock,
   drugById,
   drugList,
+  removeDrug,
 } from "../controllers/drugController.js";
 import authAdmin from "../middlewares/authAdmin.js";
 
 const DrugRouter = express.Router();
 
-DrugRouter.post("/add", upload.array("images", 4), authAdmin, addDrug);
+// Add drug (Admin only)
+DrugRouter.post("/add", authAdmin, upload.array("images", 4), addDrug);
+
+// Get all drugs (Public)
 DrugRouter.get("/list", drugList);
-DrugRouter.get("/id", drugById);
+
+// Get single drug by ID (Public)
+DrugRouter.get("/single/:id", drugById);
+
+// Change stock status (Admin only)
 DrugRouter.post("/stock", authAdmin, changeStock);
+
+// Remove drug (Admin only)
+DrugRouter.delete("/remove", authAdmin, removeDrug);
 
 export default DrugRouter;

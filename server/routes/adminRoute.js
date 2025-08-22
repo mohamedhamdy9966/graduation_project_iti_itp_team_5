@@ -1,19 +1,12 @@
 // Fixed adminRoute.js
 import express from "express";
-import {
-  addDoctor,
-  addLab,
-  adminDashboard,
-  allDoctors,
-  allLabs,
-  appointmentCancel,
-  appointmentsAdmin,
-  loginAdmin,
-  changeDoctorAvailability, // Import from adminController instead
-  changeLabAvailability, // Import from adminController instead
-} from "../controllers/adminController.js";
 import upload from "../middlewares/multer.js";
 import authAdmin from "../middlewares/authAdmin.js";
+import { addDoctor, allDoctors, changeDoctorAvailability } from "../controllers/doctorAdminController.js";
+import { addLab, allLabs, changeLabAvailability } from "../controllers/labAdminController.js";
+import { adminDashboard } from "../controllers/dashboardAdminController.js";
+import { appointmentCancel, appointmentsAdmin } from "../controllers/appointmentAdminController.js";
+import { loginAdmin } from "../controllers/authAdminController.js";
 
 const adminRouter = express.Router();
 

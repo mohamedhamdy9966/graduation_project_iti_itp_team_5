@@ -8,7 +8,7 @@ const orderSchema = new mongoose.Schema(
         drug: {
           type: mongoose.Schema.Types.ObjectId,
           required: true,
-          ref: "product",
+          ref: "drug",
         },
         quantity: { type: Number, required: true },
       },

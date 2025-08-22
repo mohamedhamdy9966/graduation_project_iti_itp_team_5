@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
-import { assets } from "../assets/assets_frontend/assets";
+import { assets } from "../assets/assets";
 import { v4 as uuidv4 } from "uuid";
 import RelatedDoctors from "../components/RelatedDoctors";
 import { toast } from "react-toastify";

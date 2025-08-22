@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import axios from "axios";
-import { assets } from "../assets/assets_frontend/assets";
+import { assets } from "../assets/assets";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
 
@@ -31,6 +31,7 @@ const Chatbot = () => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
   // File validation
@@ -422,11 +423,30 @@ const Chatbot = () => {
     fetchAppointments();
   }, [token, userData]);
 
+  // Close chatbot when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        isOpen &&
+        chatContainerRef.current &&
+        !chatContainerRef.current.contains(event.target) &&
+        !event.target.closest(".chatbot-toggle-button")
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
   return (
     <div className="fixed bottom-4 right-4 z-50">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-full shadow-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 flex items-center space-x-2"
+        className="chatbot-toggle-button bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-full shadow-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 flex items-center space-x-2 animate-bounce shadow-lg hover:shadow-indigo-500/50"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -442,15 +462,24 @@ const Chatbot = () => {
             d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
           />
         </svg>
-        <span>Chat</span>
+        <span className="hidden sm:inline">Chat</span>
       </button>
       {isOpen && (
-        <div className="mt-2 bg-white rounded-2xl shadow-2xl w-96 h-[32rem] flex flex-col overflow-hidden border border-indigo-100 transition-all duration-300">
+        <div
+          ref={chatContainerRef}
+          className="mt-2 bg-white rounded-2xl shadow-2xl w-screen max-w-sm sm:max-w-md md:max-w-lg lg:w-96 h-[85vh] max-h-[32rem] sm:h-[32rem] flex flex-col overflow-hidden border border-indigo-100 transition-all duration-300 fixed bottom-16 right-0 sm:right-4 sm:bottom-20 animate-fade-in-up"
+        >
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Roshetta Assistant</h2>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <div className="w-3 h-3 bg-green-400 rounded-full absolute -top-1 -right-1 animate-ping"></div>
+                <div className="w-3 h-3 bg-green-400 rounded-full absolute -top-1 -right-1"></div>
+              </div>
+              <h2 className="text-lg font-semibold">Roshetta Assistant</h2>
+            </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-white hover:text-gray-200 focus:outline-none"
+              className="text-white hover:text-gray-200 focus:outline-none transition-transform duration-200 hover:scale-110"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -466,33 +495,64 @@ const Chatbot = () => {
               </svg>
             </button>
           </div>
-          <div className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-4">
+          <div className="flex-1 p-4 overflow-y-auto bg-gradient-to-b from-indigo-50 to-white space-y-4">
             {messages.map((msg, index) => (
               <div
                 key={index}
                 className={`flex ${
                   msg.sender === "user" ? "justify-end" : "justify-start"
-                }`}
+                } animate-fade-in`}
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div
-                  className={`max-w-[80%] p-3 rounded-2xl shadow-md ${
+                  className={`max-w-[85%] p-3 rounded-2xl shadow-md transition-all duration-300 transform ${
                     msg.sender === "user"
-                      ? "bg-indigo-100 text-indigo-900"
-                      : "bg-white text-gray-800"
+                      ? "bg-indigo-100 text-indigo-900 hover:scale-105"
+                      : "bg-white text-gray-800 border border-indigo-100 hover:scale-105"
                   }`}
                 >
-                  {msg.text && <p>{msg.text}</p>}
+                  {msg.text && <p className="leading-relaxed">{msg.text}</p>}
                   {msg.audio && (
-                    <audio controls src={msg.audio} className="w-full mt-2" />
+                    <audio
+                      controls
+                      src={msg.audio}
+                      className="w-full mt-2 rounded-lg"
+                    />
                   )}
-                  {msg.file && <p className="mt-2">File: {msg.file}</p>}
+                  {msg.file && (
+                    <p className="mt-2 text-sm text-indigo-600 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-1"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      File: {msg.file}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
             {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white p-3 rounded-2xl shadow-md">
-                  <p className="text-gray-500">Thinking...</p>
+              <div className="flex justify-start animate-pulse">
+                <div className="bg-white p-3 rounded-2xl shadow-md border border-indigo-100">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+                    <div
+                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.4s" }}
+                    ></div>
+                  </div>
                 </div>
               </div>
             )}
@@ -514,7 +574,7 @@ const Chatbot = () => {
                 />
                 <button
                   type="submit"
-                  className="p-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 disabled:opacity-50 flex items-center"
+                  className="p-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 disabled:opacity-50 flex items-center transform hover:scale-105 active:scale-95 shadow-md hover:shadow-indigo-500/40"
                   disabled={isLoading || isRecording}
                 >
                   <svg
@@ -539,14 +599,14 @@ const Chatbot = () => {
                     isRecording
                       ? "bg-gradient-to-r from-red-600 to-pink-600 text-white hover:from-red-700 hover:to-pink-700"
                       : "bg-gradient-to-r from-green-600 to-teal-500 text-white hover:from-green-700 hover:to-teal-600"
-                  } focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 disabled:opacity-50 flex items-center space-x-2`}
+                  } focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 disabled:opacity-50 flex items-center space-x-2 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-green-500/40`}
                   disabled={isLoading}
                 >
                   {isRecording ? (
                     <>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
+                        className="h-5 w-5 animate-pulse"
                         viewBox="0 0 20 20"
                         fill="currentColor"
                       >
@@ -556,7 +616,7 @@ const Chatbot = () => {
                           clipRule="evenodd"
                         />
                       </svg>
-                      <span>Stop</span>
+                      <span className="hidden xs:inline">Stop</span>
                     </>
                   ) : (
                     <>
@@ -572,11 +632,11 @@ const Chatbot = () => {
                           clipRule="evenodd"
                         />
                       </svg>
-                      <span>Record</span>
+                      <span className="hidden xs:inline">Record</span>
                     </>
                   )}
                 </button>
-                <label className="flex-1 p-3 border border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 focus-within:ring-2 focus-within:ring-indigo-400 transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center justify-center space-x-2">
+                <label className="flex-1 p-3 border border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 focus-within:ring-2 focus-within:ring-indigo-400 transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center justify-center space-x-2 transform hover:scale-105 active:scale-95">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 text-gray-600"
@@ -589,29 +649,56 @@ const Chatbot = () => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="text-sm text-gray-600">Upload</span>
-                  <input
-                    type="file"
-                    accept="image/*,application/pdf"
-                    onChange={(event) => {
-                      const file = event.currentTarget.files[0];
-                      setSelectedFile(file);
-                      if (file) {
-                        toast.info(`File selected: ${file.name}`);
-                      }
-                    }}
-                    className="hidden"
-                    disabled={isLoading}
-                  />
+                  <span className="text-sm text-gray-600 hidden xs:inline">
+                    Upload
+                  </span>
                 </label>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files[0];
+                    setSelectedFile(file);
+                    if (file) {
+                      toast.info(`File selected: ${file.name}`);
+                    }
+                  }}
+                  className="hidden"
+                  disabled={isLoading}
+                />
               </div>
               {audioBlob && (
-                <div className="mt-2 p-3 bg-gray-100 rounded-xl">
+                <div className="mt-2 p-3 bg-gray-100 rounded-xl animate-fade-in">
                   <audio
                     controls
                     src={URL.createObjectURL(audioBlob)}
                     className="w-full"
                   />
+                </div>
+              )}
+              {selectedFile && (
+                <div className="mt-2 p-3 bg-indigo-50 rounded-xl flex items-center justify-between animate-fade-in">
+                  <span className="text-sm text-indigo-700 truncate">
+                    {selectedFile.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFile(null)}
+                    className="text-indigo-900 hover:text-indigo-700"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
                 </div>
               )}
             </div>
@@ -623,3 +710,96 @@ const Chatbot = () => {
 };
 
 export default Chatbot;
+
+// Add these styles to your global CSS file or use a CSS-in-JS solution
+const styles = `
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Responsive breakpoints */
+@media (max-width: 640px) {
+  .xs\\:hidden {
+    display: none;
+  }
+  
+  .xs\\:inline {
+    display: inline;
+  }
+}
+`;
+
+// Inject styles
+const styleSheet = document.createElement("style");
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);

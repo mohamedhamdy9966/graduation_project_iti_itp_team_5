@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
         return !this.isGoogleUser;
       },
       unique: true,
-      sparse: true, // Allows multiple null values
+      sparse: true,
       default: "",
     },
     password: {
@@ -23,15 +23,21 @@ const userSchema = new mongoose.Schema(
     googleId: {
       type: String,
       unique: true,
-      sparse: true, // Allows multiple null values
+      sparse: true,
     },
     isGoogleUser: { type: Boolean, default: false },
+    isAppleUser: { type: Boolean, default: false },
+    appleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     verifyOtp: { type: String, default: "" },
     verifyOtpExpireAt: { type: Number, default: 0 },
     isAccountVerified: { type: Boolean, default: false },
     resetOtp: { type: String, default: "" },
-    resetOtpExpireAt: { type: Number, default: "" },
-    cartItems: { type: Object, default: {} },
+    resetOtpExpireAt: { type: Number, default: 0 },
+    cart: [{ type: mongoose.Schema.Types.ObjectId, ref: "Drug" }],
     bloodType: { type: String, default: "" },
     medicalInsurance: { type: String, default: "" },
     image: {
@@ -56,6 +62,86 @@ const userSchema = new mongoose.Schema(
       ],
       default: [],
     },
+    diseases: [
+      {
+        name: { type: String, required: true },
+        diagnosedDate: { type: Date, default: Date.now },
+        status: {
+          type: String,
+          enum: ["Active", "Recovered", "Chronic"],
+          default: "Active",
+        },
+        notes: { type: String, default: "" },
+      },
+    ],
+    drugs: [
+      {
+        name: { type: String, required: true },
+        dosage: { type: String, default: "" },
+        frequency: { type: String, default: "" },
+        prescribedDate: { type: Date, default: Date.now },
+        status: {
+          type: String,
+          enum: ["Active", "Discontinued"],
+          default: "Active",
+        },
+      },
+    ],
+    medicalRecord: [
+      {
+        recordType: {
+          type: String,
+          enum: ["Diagnosis", "Lab Result", "Surgery", "Consultation", "Other"],
+          required: true,
+        },
+        date: { type: Date, default: Date.now },
+        description: { type: String, default: "" },
+        doctor: { type: String, default: "" },
+        fileUrl: { type: String, default: "" },
+      },
+    ],
+    prescriptions: [
+      {
+        drugName: { type: String, required: true },
+        dosage: { type: String, default: "" },
+        frequency: { type: String, default: "" },
+        prescribedBy: { type: String, default: "" },
+        dateIssued: { type: Date, default: Date.now },
+        fileUrl: { type: String, default: "" },
+      },
+    ],
+    reports: [
+      {
+        testName: { type: String, required: true },
+        result: { type: String, default: "" },
+        referenceRange: { type: String, default: "" },
+        analyzedBy: { type: String, default: "" },
+        dateAnalyzed: { type: Date, default: Date.now },
+        fileUrl: { type: String, default: "" },
+      },
+    ],
+    ratings: [
+      {
+        targetType: {
+          type: String,
+          enum: ["Doctor", "Lab"],
+          required: true,
+        },
+        targetId: {
+          type: mongoose.Schema.Types.ObjectId,
+          refPath: "ratings.targetType",
+          required: true,
+        },
+        rating: {
+          type: Number,
+          required: true,
+          min: [1, "Rating must be at least 1"],
+          max: [5, "Rating cannot exceed 5"],
+        },
+        feedback: { type: String, default: "" },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

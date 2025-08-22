@@ -9,6 +9,14 @@ const Doctors = () => {
   const { doctors } = useContext(AppContext);
   const [filterDoc, setFilterDoc] = useState([]);
   const [showFilter, setShowFilter] = useState(false);
+  const [filters, setFilters] = useState({
+    specialty: "",
+    experience: "",
+    availability: "",
+    minFees: "",
+    maxFees: "",
+    minRating: "",
+  });
   const navigate = useNavigate();
 
   const urlSpecialtyMap = {
@@ -31,21 +39,100 @@ const Doctors = () => {
     "ENT",
   ];
 
+  const experienceOptions = [
+    { label: "Any", value: "" },
+    { label: "0-5 years", value: "0-5" },
+    { label: "5-10 years", value: "5-10" },
+    { label: "10+ years", value: "10+" },
+  ];
+
+  const ratingOptions = [
+    { label: "Any", value: "" },
+    { label: "3+ Stars", value: "3" },
+    { label: "4+ Stars", value: "4" },
+    { label: "5 Stars", value: "5" },
+  ];
+
   const applyFilter = () => {
-    if (specialty) {
-      const normalizedspecialty =
-        urlSpecialtyMap[specialty.toLowerCase()] || specialty;
-      setFilterDoc(
-        doctors.filter((doc) => doc.specialty === normalizedspecialty)
+    let filtered = doctors;
+
+    // Specialty filter
+    if (filters.specialty || specialty) {
+      const normalizedSpecialty =
+        urlSpecialtyMap[filters.specialty.toLowerCase()] ||
+        filters.specialty ||
+        urlSpecialtyMap[specialty?.toLowerCase()] ||
+        specialty;
+      filtered = filtered.filter(
+        (doc) => doc.specialty === normalizedSpecialty
       );
-    } else {
-      setFilterDoc(doctors);
     }
+
+    // Experience filter
+    if (filters.experience) {
+      filtered = filtered.filter((doc) => {
+        const years = parseInt(doc.experience) || 0;
+        if (filters.experience === "0-5") return years <= 5;
+        if (filters.experience === "5-10") return years > 5 && years <= 10;
+        if (filters.experience === "10+") return years > 10;
+        return true;
+      });
+    }
+
+    // Availability filter
+    if (filters.availability !== "") {
+      filtered = filtered.filter(
+        (doc) => doc.available === (filters.availability === "true")
+      );
+    }
+
+    // Fees filter
+    if (filters.minFees) {
+      filtered = filtered.filter(
+        (doc) => doc.fees >= parseFloat(filters.minFees)
+      );
+    }
+    if (filters.maxFees) {
+      filtered = filtered.filter(
+        (doc) => doc.fees <= parseFloat(filters.maxFees)
+      );
+    }
+
+    // Rating filter
+    if (filters.minRating) {
+      filtered = filtered.filter((doc) => {
+        const avgRating =
+          doc.ratings?.length > 0
+            ? doc.ratings.reduce((sum, r) => sum + r.rating, 0) /
+              doc.ratings.length
+            : 0;
+        return avgRating >= parseFloat(filters.minRating);
+      });
+    }
+
+    setFilterDoc(filtered);
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      specialty: "",
+      experience: "",
+      availability: "",
+      minFees: "",
+      maxFees: "",
+      minRating: "",
+    });
+    navigate("/doctors");
   };
 
   useEffect(() => {
     applyFilter();
-  }, [doctors, specialty]);
+  }, [doctors, specialty, filters]);
 
   if (!doctors || doctors.length === 0) {
     return (
@@ -77,10 +164,10 @@ const Doctors = () => {
         </Helmet>
         <div className="animate-pulse flex space-x-4">
           <div className="flex-1 space-y-6 py-6">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-8 bg-[#B2EBF2] rounded w-1/3"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-gray-200 rounded-xl h-80"></div>
+                <div key={i} className="bg-[#B2EBF2] rounded-xl h-80"></div>
               ))}
             </div>
           </div>
@@ -153,13 +240,14 @@ const Doctors = () => {
           }`}
         />
       </Helmet>
+
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <h1 className="text-3xl font-bold text-[#212121] mb-2">
           {specialty
             ? `${urlSpecialtyMap[specialty] || specialty} Specialists`
             : "Our Specialist Doctors"}
         </h1>
-        <p className="text-gray-600 text-lg">
+        <p className="text-[#757575] text-lg">
           {specialty
             ? `Browse our expert ${
                 urlSpecialtyMap[specialty.toLowerCase()] || specialty
@@ -169,12 +257,13 @@ const Doctors = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
+        {/* Filter Sidebar */}
         <div className="lg:w-64 flex-shrink-0">
           <button
-            className={`lg:hidden mb-4 py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+            className={`lg:hidden mb-4 py-2 px-4 border border-[#BDBDBD] rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
               showFilter
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-50"
+                ? "bg-[#00BCD4] text-white"
+                : "bg-white text-[#212121] hover:bg-[#B2EBF2]"
             }`}
             onClick={() => setShowFilter((prev) => !prev)}
           >
@@ -198,35 +287,114 @@ const Doctors = () => {
           <div
             className={`${
               showFilter ? "block" : "hidden lg:block"
-            } bg-white p-4 rounded-xl shadow-sm border border-gray-200`}
+            } bg-[#00BCD4] p-4 rounded-xl shadow-sm border border-[#B2EBF2]`}
           >
-            <h3 className="font-semibold text-gray-800 mb-3 text-lg">
-              Specialties
-            </h3>
-            <div className="space-y-2">
-              {specialties.map((item) => (
-                <button
-                  key={item}
-                  onClick={() =>
-                    specialty === item.toLowerCase().replace(/ /g, "-")
-                      ? navigate("/doctors")
-                      : navigate(
-                          `/doctors/${item.toLowerCase().replace(/ /g, "-")}`
-                        )
-                  }
-                  className={`w-full text-left py-2 px-3 rounded-lg transition-all ${
-                    specialty === item.toLowerCase().replace(/ /g, "-")
-                      ? "bg-blue-100 text-blue-700 font-medium"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold text-white text-lg">Filters</h3>
+              <button
+                onClick={clearFilters}
+                className="text-sm text-white hover:underline"
+              >
+                Clear All
+              </button>
+            </div>
+
+            {/* Specialty Filter */}
+            <div className="mb-4">
+              <h4 className="text-white font-medium mb-2">Specialty</h4>
+              <select
+                name="specialty"
+                value={
+                  filters.specialty ||
+                  (specialty ? urlSpecialtyMap[specialty] || specialty : "")
+                }
+                onChange={handleFilterChange}
+                className="w-full p-2 rounded-lg text-[#212121]"
+              >
+                <option value="">All Specialties</option>
+                {specialties.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Experience Filter */}
+            <div className="mb-4">
+              <h4 className="text-white font-medium mb-2">Experience</h4>
+              <select
+                name="experience"
+                value={filters.experience}
+                onChange={handleFilterChange}
+                className="w-full p-2 rounded-lg text-[#212121]"
+              >
+                {experienceOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Availability Filter */}
+            <div className="mb-4">
+              <h4 className="text-white font-medium mb-2">Availability</h4>
+              <select
+                name="availability"
+                value={filters.availability}
+                onChange={handleFilterChange}
+                className="w-full p-2 rounded-lg text-[#212121]"
+              >
+                <option value="">All</option>
+                <option value="true">Available</option>
+                <option value="false">Not Available</option>
+              </select>
+            </div>
+
+            {/* Fees Filter */}
+            <div className="mb-4">
+              <h4 className="text-white font-medium mb-2">Fees Range</h4>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  name="minFees"
+                  value={filters.minFees}
+                  onChange={handleFilterChange}
+                  placeholder="Min Fees"
+                  className="w-1/2 p-2 rounded-lg text-[#212121]"
+                />
+                <input
+                  type="number"
+                  name="maxFees"
+                  value={filters.maxFees}
+                  onChange={handleFilterChange}
+                  placeholder="Max Fees"
+                  className="w-1/2 p-2 rounded-lg text-[#212121]"
+                />
+              </div>
+            </div>
+
+            {/* Rating Filter */}
+            <div className="mb-4">
+              <h4 className="text-white font-medium mb-2">Minimum Rating</h4>
+              <select
+                name="minRating"
+                value={filters.minRating}
+                onChange={handleFilterChange}
+                className="w-full p-2 rounded-lg text-[#212121]"
+              >
+                {ratingOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
 
+        {/* Doctors Grid */}
         <div className="flex-1">
           {filterDoc.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -234,7 +402,7 @@ const Doctors = () => {
                 <div
                   key={uuidv4()}
                   onClick={() => navigate(`/my-appointments/${item._id}`)}
-                  className="group border border-gray-200 rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg bg-white"
+                  className="group border border-[#B2EBF2] rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg bg-white"
                 >
                   <div className="relative overflow-hidden h-60">
                     <img
@@ -246,7 +414,7 @@ const Doctors = () => {
                       <div className="flex items-center gap-2">
                         <div
                           className={`w-2 h-2 rounded-full ${
-                            item.available ? "bg-green-400" : "bg-gray-400"
+                            item.available ? "bg-green-400" : "bg-[#BDBDBD]"
                           }`}
                         ></div>
                         <span className="text-white text-sm">
@@ -256,29 +424,41 @@ const Doctors = () => {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
+                    <h3 className="text-lg font-semibold text-[#212121]">
                       {item.name}
                     </h3>
-                    <p className="text-blue-600 text-sm font-medium">
+                    <p className="text-[#00BCD4] text-sm font-medium">
                       {item.specialty}
                     </p>
                     <div className="mt-3 flex items-center justify-between">
-                      <span className="text-gray-500 text-sm">
+                      <span className="text-[#757575] text-sm">
                         {item.experience} years experience
                       </span>
-                      <span className="text-gray-500 text-sm">
+                      <span className="text-[#757575] text-sm">
                         {item.degree}
                       </span>
+                    </div>
+                    <div className="mt-2 text-[#757575] text-sm">
+                      Fees: ${item.fees}
+                    </div>
+                    <div className="mt-2 text-[#757575] text-sm">
+                      Rating:{" "}
+                      {item.ratings?.length > 0
+                        ? (
+                            item.ratings.reduce((sum, r) => sum + r.rating, 0) /
+                            item.ratings.length
+                          ).toFixed(1)
+                        : "No ratings"}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
+            <div className="bg-white rounded-xl p-8 text-center border border-[#B2EBF2]">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 mx-auto text-gray-400"
+                className="h-12 w-12 mx-auto text-[#BDBDBD]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -287,18 +467,18 @@ const Doctors = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"
                 />
               </svg>
-              <h3 className="mt-4 text-lg font-medium text-gray-800">
+              <h3 className="mt-4 text-lg font-medium text-[#212121]">
                 No doctors found
               </h3>
-              <p className="mt-1 text-gray-500">
+              <p className="mt-1 text-[#757575]">
                 We couldn't find any doctors matching your criteria
               </p>
               <button
                 onClick={() => navigate("/doctors")}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="mt-4 px-4 py-2 bg-[#00BCD4] text-white rounded-lg hover:bg-[#0097A7] transition-colors text-sm font-medium"
               >
                 View All Doctors
               </button>

@@ -4,7 +4,7 @@ import { LabContext } from "../../context/LabContext";
 import { AppContext } from "../../context/AppContext";
 import { useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { assets } from "../../../../client/src/assets/assets_admin/assets";
+import { assets } from "../../assets/assets";
 
 const LabAppointments = () => {
   const {

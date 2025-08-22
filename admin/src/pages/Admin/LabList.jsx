@@ -12,8 +12,6 @@ const LabsList = () => {
     }
   }, [aToken]);
 
-  console.log("Labs in component:", labs); // Debug log
-
   return (
     <div className="m-5 max-h-[90vh] overflow-y-scroll">
       <h2 className="text-lg font-medium">All Labs ({labs?.length || 0})</h2>

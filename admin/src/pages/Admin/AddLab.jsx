@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { assets } from "../../../../client/src/assets/assets_admin/assets";
+import { assets } from "../../assets/assets";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { AdminContext } from "../../context/AdminContext";
@@ -87,8 +87,6 @@ const AddLab = () => {
         "address",
         JSON.stringify({ line1: values.address1, line2: values.address2 })
       );
-
-      console.log("Submitting lab with services:", values.services); // Debug log
 
       const { data } = await axios.post(
         backendUrl + "/api/admin/add-lab",

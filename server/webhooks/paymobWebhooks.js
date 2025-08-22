@@ -50,9 +50,6 @@ export const paymobWebhook = async (req, res) => {
         paidAmount: amount / 100, // Convert from cents
       });
 
-      console.log(
-        `Paymob payment successful for appointment: ${appointmentId}`
-      );
     } else {
       // Payment failed
       await model.findByIdAndUpdate(appointmentId, {
@@ -61,7 +58,6 @@ export const paymobWebhook = async (req, res) => {
         paymentStatus: "failed",
       });
 
-      console.log(`Paymob payment failed for appointment: ${appointmentId}`);
     }
 
     res.status(200).send("OK");
