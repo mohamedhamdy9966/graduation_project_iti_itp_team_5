@@ -3,22 +3,26 @@ import { Helmet } from "react-helmet";
 import {
   Heart,
   Shield,
-  Clock,
+  // Clock,
   Users,
   Star,
-  CheckCircle,
+  // CheckCircle,
   Award,
   TrendingUp,
   Zap,
   Globe,
   Stethoscope,
   Brain,
-  Eye,
-  Target,
+  // Eye,
+  // Target,
   Rocket,
   ArrowRight,
   Play,
   Pause,
+  Code,
+  Smartphone,
+  Database,
+  Lock,
 } from "lucide-react";
 
 const About = () => {
@@ -58,9 +62,9 @@ const About = () => {
   const assets = {
     about_image:
       "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    vezzeta_concept:
+    medical_care:
       "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-    Shezlong_concept:
+    mental_health:
       "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
     integration:
       "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
@@ -72,30 +76,30 @@ const About = () => {
       "https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
   };
 
-  const integrationStory = [
+  const healthcareStory = [
     {
-      title: "vezzeta - Medical Excellence",
-      subtitle: "Physical Health Mastery",
+      title: "Advanced Medical Care",
+      subtitle: "Excellence in Physical Health",
       description:
-        "Leading-edge medical consultations, diagnostics, and specialized care connecting patients with world-class physicians.",
-      image: assets.vezzeta_concept,
+        "Comprehensive medical services featuring specialized consultations and precise diagnostics with the finest doctors and specialists across all medical fields.",
+      image: assets.medical_care,
       color: "from-blue-500 via-cyan-500 to-teal-500",
       icon: Stethoscope,
     },
     {
-      title: "Shezlong - Mental Wellness",
-      subtitle: "Psychological Well-being",
+      title: "Mental Health Solutions",
+      subtitle: "Integrated Psychological Wellness",
       description:
-        "Revolutionary mental health platform offering therapy, counseling, and psychological support through innovative digital solutions.",
-      image: assets.Shezlong_concept,
+        "Leading mental health platform providing psychotherapy, consultations, and psychological support through innovative digital solutions.",
+      image: assets.mental_health,
       color: "from-purple-500 via-pink-500 to-rose-500",
       icon: Brain,
     },
     {
-      title: "Roshetta - Unified Future",
-      subtitle: "Complete Healthcare Ecosystem",
+      title: "Integrated Healthcare Ecosystem",
+      subtitle: "The Comprehensive Future of Healthcare",
       description:
-        "The seamless integration creating the world's first truly holistic healthcare platform, treating mind and body as one.",
+        "An integrated system that combines medical and mental healthcare for the first time, providing comprehensive healthcare that treats body and mind as one unit.",
       image: assets.integration,
       color: "from-emerald-500 via-teal-500 to-cyan-500",
       icon: Rocket,
@@ -105,29 +109,29 @@ const About = () => {
   const coreFeatures = [
     {
       icon: Heart,
-      title: "Holistic Care Integration",
-      desc: "Revolutionary fusion of vezzeta's medical expertise with Shezlong's mental health innovations, creating unprecedented comprehensive care.",
+      title: "Comprehensive Healthcare",
+      desc: "An integrated system combining medical expertise with mental health innovation, providing unparalleled comprehensive healthcare.",
       color: "from-red-400 via-pink-500 to-rose-400",
       badge: "Core Innovation",
     },
     {
       icon: Shield,
-      title: "Enterprise Security",
-      desc: "Military-grade encryption protecting both physical and mental health data with advanced privacy protocols across all platforms.",
+      title: "Advanced Security",
+      desc: "High-level encryption protecting both physical and mental health data with advanced privacy protocols across all platforms.",
       color: "from-blue-400 via-cyan-500 to-sky-400",
       badge: "Security First",
     },
     {
       icon: Zap,
-      title: "Instant Connectivity",
-      desc: "Lightning-fast access to medical doctors and mental health professionals, eliminating barriers between patients and care providers.",
+      title: "Instant Connection",
+      desc: "Quick access to doctors and mental health specialists, removing barriers between patients and healthcare providers.",
       color: "from-yellow-400 via-amber-500 to-orange-400",
       badge: "Speed & Access",
     },
     {
       icon: Globe,
       title: "Global Healthcare Network",
-      desc: "Worldwide platform connecting specialists across medical and psychological disciplines, making expert care accessible anywhere.",
+      desc: "A global platform connecting specialists in medical and mental health fields, making specialized care accessible anywhere.",
       color: "from-green-400 via-emerald-500 to-teal-400",
       badge: "Global Reach",
     },
@@ -138,52 +142,56 @@ const About = () => {
       icon: TrendingUp,
       number: "3.2M+",
       label: "Lives Transformed",
-      description: "Combined user base",
+      description: "User base",
       delay: "delay-0",
     },
     {
       icon: Users,
       number: "12K+",
-      label: "Healthcare Professionals",
-      description: "Medical & Mental Health",
+      label: "Healthcare Specialists",
+      description: "Medical & Mental",
       delay: "delay-100",
     },
     {
       icon: Star,
       number: "150+",
-      label: "Specializations",
-      description: "Integrated Disciplines",
+      label: "Specialties",
+      description: "Integrated fields",
       delay: "delay-200",
     },
     {
       icon: Award,
       number: "99.9%",
       label: "Platform Reliability",
-      description: "Uptime Excellence",
+      description: "Performance excellence",
       delay: "delay-300",
     },
   ];
 
-  const milestones = [
+  const technologies = [
     {
-      year: "2019",
-      event: "vezzeta Founded",
-      description: "Medical consultation platform launched",
+      icon: Code,
+      title: "AI-Powered Diagnostics",
+      description: "Advanced machine learning algorithms assist healthcare providers in accurate diagnosis and personalized treatment plans.",
+      color: "from-blue-500 to-purple-600",
     },
     {
-      year: "2021",
-      event: "Shezlong Established",
-      description: "Mental health platform revolutionizes care",
+      icon: Smartphone,
+      title: "Mobile-First Experience",
+      description: "Seamless healthcare access through our responsive mobile platform, ensuring care is always at your fingertips.",
+      color: "from-green-500 to-teal-600",
     },
     {
-      year: "2024",
-      event: "Strategic Merger",
-      description: "vezzeta and Shezlong unite for integrated healthcare",
+      icon: Database,
+      title: "Smart Health Records",
+      description: "Intelligent health data management that provides comprehensive insights for both patients and healthcare providers.",
+      color: "from-orange-500 to-red-600",
     },
     {
-      year: "2025",
-      event: "Roshetta Launch",
-      description: "Complete healthcare ecosystem goes live",
+      icon: Lock,
+      title: "Enterprise-Grade Security",
+      description: "Military-level encryption and security protocols ensuring your sensitive health information remains completely protected.",
+      color: "from-purple-500 to-pink-600",
     },
   ];
 
@@ -191,15 +199,15 @@ const About = () => {
     <div className="min-h-screen bg-white text-gray-900 overflow-hidden">
       <Helmet>
         <title>
-          Roshetta - Integrated Healthcare Ecosystem | vezzeta & Shezlong
+          Roshetta - Integrated Healthcare Ecosystem
         </title>
         <meta
           name="description"
-          content="Discover Roshetta, the world's first integrated healthcare ecosystem combining vezzeta's medical excellence with Shezlong's mental wellness innovations."
+          content="Discover Roshetta, the world's first integrated healthcare ecosystem combining medical excellence with mental health innovation."
         />
         <meta
           name="keywords"
-          content="Roshetta, vezzeta, Shezlong, integrated healthcare, medical consultations, mental health, holistic care, healthcare platform"
+          content="Roshetta, integrated healthcare, medical consultations, mental health, comprehensive care, healthcare platform"
         />
         <meta name="author" content="Roshetta Team" />
         <meta
@@ -208,10 +216,10 @@ const About = () => {
         />
         <meta
           property="og:description"
-          content="Explore the revolutionary merger of vezzeta and Shezlong, creating a holistic healthcare platform for physical and mental well-being."
+          content="Explore Roshetta's revolutionary platform for comprehensive healthcare for body and mind."
         />
         <meta property="og:image" content={assets.about_image} />
-        <meta property="og:url" content="https://www.Roshetta.com/about" />
+        <meta property="og:url" content="https://www.roshetta.com/about" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta
@@ -220,10 +228,10 @@ const About = () => {
         />
         <meta
           name="twitter:description"
-          content="Join millions experiencing the power of integrated healthcare with Roshetta, combining vezzeta and Shezlong."
+          content="Join millions experiencing the power of integrated healthcare with Roshetta."
         />
         <meta name="twitter:image" content={assets.about_image} />
-        <link rel="canonical" href="https://www.Roshetta.com/about" />
+        <link rel="canonical" href="https://www.roshetta.com/about" />
       </Helmet>
 
       <style jsx="true">{`
@@ -385,25 +393,24 @@ const About = () => {
 
             <div className="space-y-4">
               <p className="text-2xl md:text-4xl font-bold text-gray-800">
-                Where <span className="text-blue-600">vezzeta</span> meets{" "}
-                <span className="text-purple-600">Shezlong</span>
+                Where <span className="text-blue-600">Medical Care</span> meets{" "}
+                <span className="text-purple-600">Mental Health</span>
               </p>
               <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                The revolutionary merger creating the world's first truly
-                integrated healthcare ecosystem
+                The world's first integrated healthcare ecosystem uniting body and mind
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center pt-8">
               <button className="group relative px-12 py-6 bg-gradient-to-r from-cyan-500 to-teal-500 text-white text-xl font-bold rounded-full overflow-hidden transition-all duration-500 transform hover:scale-110 hover:shadow-2xl">
                 <span className="relative z-10 flex items-center gap-2">
-                  Explore Integration{" "}
+                  Explore Platform{" "}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
                 </span>
                 <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
               </button>
               <button className="px-12 py-6 border-2 border-gray-300 text-gray-700 font-bold text-xl rounded-full hover:border-cyan-500 hover:text-cyan-600 transition-all duration-300 transform hover:scale-105">
-                Watch Story
+                Watch Our Story
               </button>
             </div>
           </div>
@@ -418,16 +425,15 @@ const About = () => {
         </div>
       </section>
 
-      {/* Integration Story Section */}
+      {/* Healthcare Story Section */}
       <section className="py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold text-gradient mb-6">
-              The Integration Story
+              The Integrated Healthcare Journey
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Witness the revolutionary merger that's reshaping healthcare
-              forever
+              Discover the revolution reshaping healthcare forever
             </p>
           </div>
 
@@ -446,15 +452,14 @@ const About = () => {
                   )}
                 </button>
                 <div className="flex gap-2">
-                  {integrationStory.map((_, index) => (
+                  {healthcareStory.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setActiveSection(index)}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                        activeSection === index
-                          ? "bg-gradient-to-r from-cyan-500 to-teal-500 scale-125"
-                          : "bg-gray-300 hover:bg-gray-400"
-                      }`}
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${activeSection === index
+                        ? "bg-gradient-to-r from-cyan-500 to-teal-500 scale-125"
+                        : "bg-gray-300 hover:bg-gray-400"
+                        }`}
                     />
                   ))}
                 </div>
@@ -463,7 +468,7 @@ const About = () => {
 
             <div className="grid lg:grid-cols-2 gap-16 items-center min-h-[600px]">
               <div className="space-y-8 slide-up">
-                {integrationStory.map((story, index) => {
+                {healthcareStory.map((story, index) => {
                   const IconComponent = story.icon;
                   return activeSection === index ? (
                     <div key={index} className="space-y-6">
@@ -503,17 +508,17 @@ const About = () => {
               <div className="relative">
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-700">
                   <img
-                    src={integrationStory[activeSection].image}
-                    alt={integrationStory[activeSection].title}
+                    src={healthcareStory[activeSection].image}
+                    alt={healthcareStory[activeSection].title}
                     className="w-full h-96 object-cover"
                   />
                   <div
-                    className={`absolute inset-0 bg-gradient-to-r ${integrationStory[activeSection].color} opacity-20`}
+                    className={`absolute inset-0 bg-gradient-to-r ${healthcareStory[activeSection].color} opacity-20`}
                   ></div>
                   <div className="absolute inset-0 shimmer opacity-30"></div>
                 </div>
                 <div
-                  className={`absolute -bottom-6 -right-6 w-24 h-24 bg-gradient-to-r ${integrationStory[activeSection].color} rounded-3xl shadow-xl floating`}
+                  className={`absolute -bottom-6 -right-6 w-24 h-24 bg-gradient-to-r ${healthcareStory[activeSection].color} rounded-3xl shadow-xl floating`}
                 ></div>
                 <div
                   className="absolute -top-6 -left-6 w-16 h-16 bg-gradient-to-br from-pink-400 to-rose-500 rounded-2xl shadow-lg floating"
@@ -533,7 +538,7 @@ const About = () => {
               Revolutionary Capabilities
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Breakthrough technologies born from the perfect integration
+              Cutting-edge technologies born from perfect integration
             </p>
           </div>
 
@@ -569,7 +574,7 @@ const About = () => {
                   </p>
 
                   <div
-                    className={`absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r ${feature.color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left`}
+                    className={`absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r ${feature.color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right`}
                   ></div>
                 </div>
               );
@@ -589,7 +594,7 @@ const About = () => {
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Combined Impact
+              Integrated Impact
             </h2>
             <p className="text-xl opacity-90">
               The power of integration in numbers
@@ -622,49 +627,44 @@ const About = () => {
         </div>
       </section>
 
-      {/* Timeline Section */}
+      {/* Technology & Innovation Section */}
       <section className="py-32 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold text-gradient mb-6">
-              Our Journey
+              Technology & Innovation
             </h2>
-            <p className="text-xl text-gray-600">
-              The path to healthcare revolution
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Powered by cutting-edge technology to deliver exceptional healthcare experiences
             </p>
           </div>
 
-          <div className="relative">
-            <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-gradient-to-b from-cyan-400 to-purple-500"></div>
-
-            {milestones.map((milestone, index) => (
-              <div
-                key={index}
-                className={`relative flex items-center mb-16 ${
-                  index % 2 === 0 ? "justify-start" : "justify-end"
-                }`}
-              >
+          <div className="grid md:grid-cols-2 gap-8">
+            {technologies.map((tech, index) => {
+              const IconComponent = tech.icon;
+              return (
                 <div
-                  className={`w-1/2 ${
-                    index % 2 === 0 ? "pr-8 text-right" : "pl-8"
-                  }`}
+                  key={index}
+                  className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border border-gray-100 relative overflow-hidden"
                 >
-                  <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-                    <div className="text-2xl font-bold text-cyan-600 mb-2">
-                      {milestone.year}
-                    </div>
-                    <div className="text-xl font-semibold text-gray-800 mb-3">
-                      {milestone.event}
-                    </div>
-                    <div className="text-gray-600">{milestone.description}</div>
-                  </div>
-                </div>
+                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${tech.color}`}></div>
 
-                <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full shadow-lg">
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full pulse-ring"></div>
+                  <div className={`w-16 h-16 bg-gradient-to-r ${tech.color} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                    <IconComponent className="w-8 h-8 text-white" />
+                  </div>
+
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4 group-hover:text-gray-900 transition-colors">
+                    {tech.title}
+                  </h3>
+
+                  <p className="text-gray-600 leading-relaxed">
+                    {tech.description}
+                  </p>
+
+                  <div className={`absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-r ${tech.color} opacity-5 rounded-full group-hover:scale-125 transition-transform duration-700`}></div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -682,9 +682,7 @@ const About = () => {
               Ready to Experience the Future?
             </h2>
             <p className="text-xl md:text-2xl mb-12 opacity-90 leading-relaxed max-w-4xl mx-auto">
-              Join millions who have discovered the power of integrated
-              healthcare. Where vezzeta's medical excellence meets Shezlong's
-              mental wellness innovation.
+              Join millions who have discovered the power of integrated healthcare. Where medical excellence meets mental health innovation.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
@@ -701,22 +699,22 @@ const About = () => {
               </button>
             </div>
 
-            <div className="pt-12 flex justify-center space-x-12 opacity-80">
+            <div className="pt-12 flex justify-center items-center space-x-8 opacity-80">
               <div className="text-center">
-                <div className="text-2xl font-bold text-cyan-400">vezzeta</div>
+                <div className="text-2xl font-bold text-cyan-400">Medical Care</div>
                 <div className="text-sm">Medical Excellence</div>
               </div>
               <div className="text-4xl font-light text-white">+</div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-400">
-                  Shezlong
+                  Mental Health
                 </div>
-                <div className="text-sm">Mental Wellness</div>
+                <div className="text-sm">Psychological Wellness</div>
               </div>
               <div className="text-4xl font-light text-white">=</div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-gradient">Roshetta</div>
-                <div className="text-sm">Complete Healthcare</div>
+                <div className="text-sm">Comprehensive Healthcare</div>
               </div>
             </div>
           </div>
