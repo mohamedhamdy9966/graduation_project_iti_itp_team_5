@@ -22,12 +22,13 @@ import DrugOrder from "./pages/DrugOrder";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import PaymentProcessing from "./pages/PaymentProcessing";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const App = () => {
   return (
     <div >
-      <ToastContainer/>
-      <Navbar/>
+      <ToastContainer />
+      <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/doctors" element={<Doctors />} />
@@ -41,6 +42,7 @@ const App = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/privacypolicy" element={<PrivacyPolicy />} />
         <Route path="/my-profile" element={<MyProfile />} />
         <Route path="/my-appointments" element={<MyAppointments />} />
         <Route path="/my-appointments/:docId" element={<DoctorAppointment />} />

@@ -60,12 +60,13 @@ const Navbar = () => {
     },
     { label: "About", path: "/about", icon: "fa-info-circle" },
     { label: "Contact", path: "/contact", icon: "fa-phone" },
+    { label: "Privacy Policy", path: "/privacypolicy", icon: "fa-privacy" },
   ];
 
   // Cart component for reusability
   const CartIcon = ({ size = "text-2xl" }) => (
     <NavLink to="/cart" className="relative">
-      <MdShoppingCart 
+      <MdShoppingCart
         className={`text-white ${size} hover:text-[gray-300 ] transition-colors`}
       />
       {userData?.cartItems && userData.cartItems.length > 0 && (
@@ -115,10 +116,9 @@ const Navbar = () => {
                       `text-white px-3 py-2 rounded-md text-sm font-medium relative
                       after:content-[''] after:absolute after:left-0 after:bottom-0 
                       after:h-[2px] after:bg-white after:transition-all after:duration-400 
-                      ${
-                        isActive
-                          ? "after:w-full"
-                          : "after:w-0 hover:after:w-full"
+                      ${isActive
+                        ? "after:w-full"
+                        : "after:w-0 hover:after:w-full"
                       }`
                     }
                   >
@@ -148,9 +148,8 @@ const Navbar = () => {
                       {userData.name}
                     </span>
                     <i
-                      className={`fas fa-chevron-${
-                        showDropdown ? "up" : "down"
-                      } ml-1 text-white text-xs`}
+                      className={`fas fa-chevron-${showDropdown ? "up" : "down"
+                        } ml-1 text-white text-xs`}
                     ></i>
                   </div>
 
@@ -218,10 +217,9 @@ const Navbar = () => {
                       `text-white px-2 py-1 rounded-md text-xs font-medium relative
                       after:content-[''] after:absolute after:left-0 after:bottom-0 
                       after:h-[2px] after:bg-white after:transition-all after:duration-400 
-                      ${
-                        isActive
-                          ? "after:w-full"
-                          : "after:w-0 hover:after:w-full"
+                      ${isActive
+                        ? "after:w-full"
+                        : "after:w-0 hover:after:w-full"
                       }`
                     }
                   >
@@ -239,9 +237,8 @@ const Navbar = () => {
               >
                 More{" "}
                 <i
-                  className={`fas fa-chevron-${
-                    showDropdown ? "up" : "down"
-                  } ml-1 text-xs`}
+                  className={`fas fa-chevron-${showDropdown ? "up" : "down"
+                    } ml-1 text-xs`}
                 ></i>
               </button>
 
@@ -387,16 +384,14 @@ const Navbar = () => {
 
       {/* Mobile menu - shown below 768px */}
       <div
-        className={`md:hidden fixed inset-0 z-40 transform ${
-          menuOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out`}
+        className={`md:hidden fixed inset-0 z-40 transform ${menuOpen ? "translate-x-0" : "-translate-x-full"
+          } transition-transform duration-300 ease-in-out`}
         style={{ top: "64px", width: "65%" }}
         ref={mobileMenuRef}
       >
         <div
-          className={`fixed inset-0 bg-black bg-opacity-50 ${
-            menuOpen ? "block" : "hidden"
-          }`}
+          className={`fixed inset-0 bg-black bg-opacity-50 ${menuOpen ? "block" : "hidden"
+            }`}
           onClick={() => setMenuOpen(false)}
         ></div>
         <div className="relative flex flex-col w-full h-full bg-[#0097A7] shadow-xl">
@@ -408,10 +403,9 @@ const Navbar = () => {
                   to={item.path}
                   className={({ isActive }) => `
                     group flex items-center px-3 py-3 my-1 text-sm font-medium rounded-md
-                    ${
-                      isActive
-                        ? "bg-gray-100 text-gray-900"
-                        : "text-white hover:text-gray-900 hover:bg-gray-100"
+                    ${isActive
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-white hover:text-gray-900 hover:bg-gray-100"
                     }
                   `}
                   onClick={handleNavClick}
@@ -419,11 +413,10 @@ const Navbar = () => {
                   {({ isActive }) => (
                     <>
                       <i
-                        className={`fas ${item.icon} mr-3 ${
-                          isActive
+                        className={`fas ${item.icon} mr-3 ${isActive
                             ? "text-gray-500"
                             : "text-gray-400 group-hover:text-gray-500"
-                        }`}
+                          }`}
                       ></i>
                       {item.label}
                     </>
@@ -438,15 +431,14 @@ const Navbar = () => {
                       to="/cart"
                       className={({ isActive }) => `
                         group flex items-center px-3 py-3 text-sm font-medium rounded-md relative
-                        ${
-                          isActive
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-white hover:text-gray-900 hover:bg-gray-100"
+                        ${isActive
+                          ? "bg-gray-100 text-gray-900"
+                          : "text-white hover:text-gray-900 hover:bg-gray-100"
                         }
                       `}
                       onClick={handleNavClick}
                     >
-                      <MdShoppingCart  className="mr-3 text-gray-400 group-hover:text-gray-500" />
+                      <MdShoppingCart className="mr-3 text-gray-400 group-hover:text-gray-500" />
                       Cart
                       {userData.cartItems && userData.cartItems.length > 0 && (
                         <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">
@@ -458,10 +450,9 @@ const Navbar = () => {
                       to="/my-profile"
                       className={({ isActive }) => `
                         group flex items-center px-3 py-3 text-sm font-medium rounded-md
-                        ${
-                          isActive
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-white hover:text-gray-900 hover:bg-gray-100"
+                        ${isActive
+                          ? "bg-gray-100 text-gray-900"
+                          : "text-white hover:text-gray-900 hover:bg-gray-100"
                         }
                       `}
                       onClick={handleNavClick}
@@ -473,10 +464,9 @@ const Navbar = () => {
                       to="/my-appointments"
                       className={({ isActive }) => `
                         group flex items-center px-3 py-3 text-sm font-medium rounded-md
-                        ${
-                          isActive
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-white hover:text-gray-900 hover:bg-gray-100"
+                        ${isActive
+                          ? "bg-gray-100 text-gray-900"
+                          : "text-white hover:text-gray-900 hover:bg-gray-100"
                         }
                       `}
                       onClick={handleNavClick}
@@ -488,10 +478,9 @@ const Navbar = () => {
                       to="/my-lab-appointments"
                       className={({ isActive }) => `
                         group flex items-center px-3 py-3 text-sm font-medium rounded-md
-                        ${
-                          isActive
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-white hover:text-gray-900 hover:bg-gray-100"
+                        ${isActive
+                          ? "bg-gray-100 text-gray-900"
+                          : "text-white hover:text-gray-900 hover:bg-gray-100"
                         }
                       `}
                       onClick={handleNavClick}
@@ -503,10 +492,9 @@ const Navbar = () => {
                       to="/my-drug-orders"
                       className={({ isActive }) => `
                         group flex items-center px-3 py-3 text-sm font-medium rounded-md
-                        ${
-                          isActive
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-white hover:text-gray-900 hover:bg-gray-100"
+                        ${isActive
+                          ? "bg-gray-100 text-gray-900"
+                          : "text-white hover:text-gray-900 hover:bg-gray-100"
                         }
                       `}
                       onClick={handleNavClick}
